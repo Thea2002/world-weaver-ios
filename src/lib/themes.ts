@@ -1,0 +1,96 @@
+export type ThemeName = "nord" | "dracula" | "gruvbox" | "solarized";
+
+export const THEMES: { id: ThemeName; label: string; swatch: string[] }[] = [
+  { id: "nord", label: "Nord", swatch: ["#2e3440", "#88c0d0", "#a3be8c", "#bf616a"] },
+  { id: "dracula", label: "Dracula", swatch: ["#282a36", "#bd93f9", "#50fa7b", "#ff79c6"] },
+  { id: "gruvbox", label: "Gruvbox", swatch: ["#282828", "#fabd2f", "#b8bb26", "#fb4934"] },
+  { id: "solarized", label: "Solarized", swatch: ["#002b36", "#268bd2", "#859900", "#cb4b16"] },
+];
+
+const THEME_KEY = "mythic:theme";
+const CUSTOM_KEY = "mythic:custom-theme";
+
+export function applyTheme(name: ThemeName) {
+  if (typeof document === "undefined") return;
+  document.documentElement.dataset["theme"] = name;
+  localStorage.setItem(THEME_KEY, name);
+}
+
+export function getTheme(): ThemeName {
+  if (typeof localStorage === "undefined") return "nord";
+  return (localStorage.getItem(THEME_KEY) as ThemeName) ?? "nord";
+}
+
+/** Accepts raw JSON, CSS or .uss text and maps recognised keys onto design tokens. */
+export function importCustomTheme(raw: string): { applied: string[]; error?: string } {
+  const pairs: Record<string, string> = {};
+  const trimmed = raw.trim();
+
+  try {
+    if (trimmed.startsWith("{")) {
+      const flatten = (obj: unknown, prefix = "") => {
+        if (!obj || typeof obj !== "object") return;
+        for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+          if (typeof v === "string") pairs[(prefix + k).toLowerCase()] = v;
+          else flatten(v, prefix + k + ".");
+        }
+      };
+      flatten(JSON.parse(trimmed));
+    } else {
+      for (const m of trimmed.matchAll(/([-\w.]+)\s*:\s*([^;{}\n]+)/g)) {
+        pairs[m[1]!.replace(/^--/, "").toLowerCase()] = m[2]!.trim();
+      }
+    }
+  } catch {
+    return { applied: [], error: "Konnte Theme nicht parsen (JSON/CSS erwartet)." };
+  }
+
+  const find = (...keys: string[]) => {
+    for (const key of keys) {
+      const hit = Object.keys(pairs).find((p) => p.endsWith(key));
+      if (hit && /^(#|rgb|hsl|oklch)/i.test(pairs[hit]!)) return pairs[hit]!;
+    }
+    return undefined;
+  };
+
+  const map: [string, string | undefined][] = [
+    ["--background", find("background", "bg", "base00", "editor.background")],
+    ["--foreground", find("foreground", "fg", "text", "base05")],
+    ["--surface", find("surface", "panel", "sidebar", "base01")],
+    ["--primary", find("accent", "primary", "blue", "base0d")],
+    ["--secondary", find("secondary", "green", "base0b")],
+    ["--destructive", find("error", "red", "base08")],
+  ];
+
+  const applied: string[] = [];
+  const style: Record<string, string> = {};
+  for (const [token, value] of map) {
+    if (!value) continue;
+    document.documentElement.style.setProperty(token, value);
+    style[token] = value;
+    applied.push(token);
+  }
+  if (!applied.length) return { applied, error: "Keine bekannten Farbwerte gefunden." };
+  localStorage.setItem(CUSTOM_KEY, JSON.stringify(style));
+  return { applied };
+}
+
+export function restoreCustomTheme() {
+  if (typeof localStorage === "undefined") return;
+  const raw = localStorage.getItem(CUSTOM_KEY);
+  if (!raw) return;
+  try {
+    for (const [k, v] of Object.entries(JSON.parse(raw) as Record<string, string>)) {
+      document.documentElement.style.setProperty(k, v);
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+export function clearCustomTheme() {
+  localStorage.removeItem(CUSTOM_KEY);
+  for (const t of ["--background", "--foreground", "--surface", "--primary", "--secondary", "--destructive"]) {
+    document.documentElement.style.removeProperty(t);
+  }
+}
