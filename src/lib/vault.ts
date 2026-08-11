@@ -131,7 +131,9 @@ export function useVault() {
     const sync = () => setNotes(read());
     sync();
     listeners.add(sync);
-    return () => listeners.delete(sync);
+    return () => {
+      listeners.delete(sync);
+    };
   }, []);
 
   const save = useCallback((note: Note) => {
