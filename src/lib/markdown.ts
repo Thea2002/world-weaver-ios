@@ -3,9 +3,37 @@ import DOMPurify from "dompurify";
 
 marked.setOptions({ gfm: true, breaks: true });
 
-/** Renders markdown with [[wikilinks]], ![[embeds]], inline CSS and SVG support. */
+const CALLOUT_ICONS: Record<string, string> = {
+  info: "ℹ️",
+  danger: "⚠️",
+  warning: "⚠️",
+  tip: "💡",
+  note: "📝",
+  quote: "❝",
+  statblock: "📊",
+  success: "✅",
+};
+
+/** Converts Obsidian-style `> [!info] Title` callouts into styled blocks. */
+function renderCallouts(source: string) {
+  return source.replace(
+    /^> \[!(\w+)(?:\|([^\]]+))?\][ \t]*(.*)((?:\n> .*)*)/gm,
+    (_m, kind: string, variant: string | undefined, title: string, rest: string) => {
+      const k = kind.toLowerCase();
+      const bodyLines = (rest || "")
+        .split("\n")
+        .map((l) => l.replace(/^> ?/, ""))
+        .filter((l) => l.trim() !== "");
+      const body = bodyLines.length ? `<p>${bodyLines.join("<br/>")}</p>` : "";
+      const label = title.trim() || k.charAt(0).toUpperCase() + k.slice(1);
+      return `<div class="md-callout md-callout-${k}${variant ? " md-callout-statblock" : ""}"><p class="md-callout-title">${CALLOUT_ICONS[k] ?? "•"} ${label}</p>${body}</div>`;
+    },
+  );
+}
+
+/** Renders markdown with [[wikilinks]], ![[embeds]], callouts, inline CSS and SVG support. */
 export function renderMarkdown(source: string, resolve?: (title: string) => string | undefined) {
-  const withLinks = source
+  const withLinks = renderCallouts(source)
     .replace(/!\[\[([^\]]+)\]\]/g, (_m, target: string) => {
       const [name] = target.split("|");
       return `<blockquote class="md-embed"><strong>Embed:</strong> ${name!.trim()}</blockquote>`;
@@ -18,6 +46,7 @@ export function renderMarkdown(source: string, resolve?: (title: string) => stri
     });
 
   const html = marked.parse(withLinks, { async: false }) as string;
+
 
   return DOMPurify.sanitize(html, {
     USE_PROFILES: { html: true, svg: true, svgFilters: true },

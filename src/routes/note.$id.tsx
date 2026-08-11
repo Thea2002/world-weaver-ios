@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Download, Eye, Code2, Trash2 } from "lucide-react";
 import { TabBar } from "@/components/TabBar";
-import { renderMarkdown, highlightMarkdown } from "@/lib/markdown";
+import { highlightMarkdown } from "@/lib/markdown";
+import { PreviewContent } from "@/components/PreviewContent";
 import { download, useVault } from "@/lib/vault";
 
 export const Route = createFileRoute("/note/$id")({
@@ -23,32 +24,22 @@ function NoteEditor() {
   const { notes, save, remove } = useVault();
   const note = notes.find((n) => n.id === id);
 
-  const [body, setBody] = useState("");
+  const [doc, setDoc] = useState<{ id: string; body: string }>({ id: "", body: "" });
+  const body = doc.id === id ? doc.body : (note?.body ?? "");
+  const setBody = (value: string) => setDoc({ id, body: value });
   const [mode, setMode] = useState<"source" | "preview">("source");
   const [saved, setSaved] = useState(false);
-  const loaded = useRef(false);
 
   useEffect(() => {
-    if (note && !loaded.current) {
-      setBody(note.body);
-      loaded.current = true;
-    }
-  }, [note]);
-
-  useEffect(() => {
-    if (!note || !loaded.current || body === note.body) return;
+    if (!note || doc.id !== note.id || doc.body === note.body) return;
     const t = setTimeout(() => {
-      save({ ...note, body });
+      save({ ...note, body: doc.body });
       setSaved(true);
       setTimeout(() => setSaved(false), 1200);
     }, 700);
     return () => clearTimeout(t);
-  }, [body, note, save]);
+  }, [doc, note, save]);
 
-  const html = useMemo(
-    () => renderMarkdown(body, (title) => notes.find((n) => n.title.toLowerCase() === title.toLowerCase())?.id),
-    [body, notes],
-  );
 
   if (!note) {
     return (
@@ -115,7 +106,7 @@ function NoteEditor() {
             />
           </div>
         ) : (
-          <article className="markdown-preview" dangerouslySetInnerHTML={{ __html: html }} />
+          <PreviewContent body={body} path={note.path} />
         )}
 
         <section className="mt-6">

@@ -1,13 +1,15 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, Share2, Globe2, Search, Settings } from "lucide-react";
+import { BookOpen, Share2, Globe2, Sparkles, Search, Settings } from "lucide-react";
 
 const TABS = [
   { to: "/", label: "Journal", icon: BookOpen },
   { to: "/graph", label: "Graph", icon: Share2 },
   { to: "/world", label: "World", icon: Globe2 },
+  { to: "/skills", label: "Skills", icon: Sparkles },
   { to: "/search", label: "Suche", icon: Search },
   { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
+
 
 export function TabBar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
