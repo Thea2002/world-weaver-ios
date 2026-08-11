@@ -344,3 +344,40 @@
 .md-wikilink { color: var(--color-accent); }
 .md-wikilink-missing { color: var(--color-destructive); text-decoration-style: dashed; }
 .md-embed { border-left-color: var(--color-accent); }
+
+/* ---------- Callouts ---------- */
+.md-callout {
+  margin: 0.9em 0;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-primary);
+  background: var(--color-surface);
+  padding: 0.65em 0.9em;
+}
+.md-callout-title { margin: 0 0 0.2em; font-weight: 700; color: var(--color-primary); }
+.md-callout p:last-child { margin-bottom: 0; }
+.md-callout-danger, .md-callout-warning { border-left-color: var(--color-destructive); }
+.md-callout-danger .md-callout-title, .md-callout-warning .md-callout-title { color: var(--color-destructive); }
+.md-callout-tip, .md-callout-success { border-left-color: var(--color-accent); }
+.md-callout-tip .md-callout-title, .md-callout-success .md-callout-title { color: var(--color-accent); }
+.md-callout-statblock { background: var(--color-surface-2); font-family: var(--font-mono); font-size: 0.85em; }
+
+/* ---------- CSV renderer ---------- */
+.csv-block {
+  margin: 1em 0;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 0.75rem 0.6rem;
+}
+.csv-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.csv-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.csv-table th,
+.csv-table td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.45rem 0.5rem;
+  text-align: left;
+  white-space: nowrap;
+}
+.csv-table th { color: var(--color-primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; font-size: 10px; }
+.csv-table tbody tr:active { background: var(--color-surface-2); }

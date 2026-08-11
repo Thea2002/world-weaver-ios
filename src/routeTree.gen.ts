@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as GraphRouteImport } from './routes/graph'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SkillsRouteImport } from './routes/skills'
 import { Route as WorldRouteImport } from './routes/world'
 import { Route as NoteIdRouteImport } from './routes/note.$id'
 
@@ -36,6 +37,11 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SkillsRoute = SkillsRouteImport.update({
+  id: '/skills',
+  path: '/skills',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WorldRoute = WorldRouteImport.update({
   id: '/world',
   path: '/world',
@@ -52,6 +58,7 @@ export interface FileRoutesByFullPath {
   '/graph': typeof GraphRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
+  '/skills': typeof SkillsRoute
   '/world': typeof WorldRoute
   '/note/$id': typeof NoteIdRoute
 }
@@ -60,6 +67,7 @@ export interface FileRoutesByTo {
   '/graph': typeof GraphRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
+  '/skills': typeof SkillsRoute
   '/world': typeof WorldRoute
   '/note/$id': typeof NoteIdRoute
 }
@@ -69,20 +77,36 @@ export interface FileRoutesById {
   '/graph': typeof GraphRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
+  '/skills': typeof SkillsRoute
   '/world': typeof WorldRoute
   '/note/$id': typeof NoteIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/graph' | '/search' | '/settings' | '/world' | '/note/$id'
+  fullPaths:
+    | '/'
+    | '/graph'
+    | '/search'
+    | '/settings'
+    | '/skills'
+    | '/world'
+    | '/note/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/graph' | '/search' | '/settings' | '/world' | '/note/$id'
+  to:
+    | '/'
+    | '/graph'
+    | '/search'
+    | '/settings'
+    | '/skills'
+    | '/world'
+    | '/note/$id'
   id:
     | '__root__'
     | '/'
     | '/graph'
     | '/search'
     | '/settings'
+    | '/skills'
     | '/world'
     | '/note/$id'
   fileRoutesById: FileRoutesById
@@ -92,6 +116,7 @@ export interface RootRouteChildren {
   GraphRoute: typeof GraphRoute
   SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRoute
+  SkillsRoute: typeof SkillsRoute
   WorldRoute: typeof WorldRoute
   NoteIdRoute: typeof NoteIdRoute
 }
@@ -126,6 +151,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/skills': {
+      id: '/skills'
+      path: '/skills'
+      fullPath: '/skills'
+      preLoaderRoute: typeof SkillsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/world': {
       id: '/world'
       path: '/world'
@@ -148,6 +180,7 @@ const rootRouteChildren: RootRouteChildren = {
   GraphRoute: GraphRoute,
   SearchRoute: SearchRoute,
   SettingsRoute: SettingsRoute,
+  SkillsRoute: SkillsRoute,
   WorldRoute: WorldRoute,
   NoteIdRoute: NoteIdRoute,
 }

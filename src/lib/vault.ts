@@ -12,7 +12,7 @@ export type Note = {
   updatedAt: number;
 };
 
-const KEY = "mythic:vault:v1";
+const KEY = "mythic:vault:v3";
 const listeners = new Set<() => void>();
 
 function emit() {
@@ -67,6 +67,19 @@ Türme aus <span style="color:#d08770">Manifest-Zone-Stein</span> durchstoßen d
 
 Verknüpft: [[Elminster Aumar]] · [[Harpers]]
 `,
+    },
+    {
+      id: "n-loot-csv",
+      title: "Loot-Tabelle",
+      path: "World/Data/Loot.csv",
+      kind: "note",
+      properties: { Typ: "CSV", Spalten: "4" },
+      updatedAt: Date.now() - 2_000_000,
+      body: `Name;Typ;Wert;Ort
+Elminster Aumar;NSC;-;Shadowdale
+Sharn;Ort;-;Eberron
+Nebelvertrag;Artefakt;2500;Sharn
+Harfner-Pin;Abzeichen;150;Shadowdale`,
     },
     {
       id: "n-session-01",
