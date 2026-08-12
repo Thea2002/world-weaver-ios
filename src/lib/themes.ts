@@ -25,8 +25,15 @@ export function extractThemeUrls(raw: string): string[] {
 }
 
 /** Loads remote CSS via <link>, then maps recognised color vars onto our tokens. */
+const TOKENS = ["--background", "--foreground", "--surface", "--primary", "--secondary", "--destructive"];
+
 export async function applyRemoteTheme(url: string): Promise<{ error?: string; applied: string[] }> {
   if (typeof document === "undefined") return { applied: [] };
+  // Snapshot the currently effective tokens: a remote stylesheet may define the same
+  // variable names and would otherwise repaint the app with unreadable colors.
+  const computed = getComputedStyle(document.documentElement);
+  const fallback = Object.fromEntries(TOKENS.map((t) => [t, computed.getPropertyValue(t).trim()]));
+
   document.getElementById(REMOTE_ID)?.remove();
   const link = document.createElement("link");
   link.id = REMOTE_ID;
@@ -35,19 +42,29 @@ export async function applyRemoteTheme(url: string): Promise<{ error?: string; a
   document.head.appendChild(link);
   localStorage.setItem(REMOTE_KEY, url);
 
+  const pinFallback = () => {
+    for (const [t, v] of Object.entries(fallback)) {
+      if (v) document.documentElement.style.setProperty(t, v);
+    }
+  };
+
   try {
     const res = await fetch(url);
-    if (!res.ok) return { applied: [], error: `Stylesheet geladen, Farben nicht lesbar (${res.status}).` };
+    if (!res.ok) {
+      pinFallback();
+      return { applied: [], error: `Stylesheet geladen, Farben nicht lesbar (${res.status}).` };
+    }
     const css = await res.text();
     const mapped = importCustomTheme(css);
-    // Only keep the token mapping when we got a readable background/foreground pair,
-    // otherwise the imported stylesheet would leave unreadable text behind.
+    // Only keep the token mapping when we got a readable background/foreground pair.
     if (!(mapped.applied.includes("--background") && mapped.applied.includes("--foreground"))) {
       clearCustomTheme();
-      return { applied: [], error: "Stylesheet eingebunden — Farbpalette nicht eindeutig, Preset-Farben bleiben aktiv." };
+      pinFallback();
+      return { applied: [], error: "Stylesheet eingebunden — Farbpalette unklar, Preset-Farben bleiben aktiv." };
     }
     return { applied: mapped.applied };
   } catch {
+
     return { applied: [], error: "Stylesheet eingebunden, Farb-Mapping fehlgeschlagen (CORS)." };
   }
 }
