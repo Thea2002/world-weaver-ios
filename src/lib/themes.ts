@@ -43,9 +43,13 @@ export async function applyRemoteTheme(url: string): Promise<{ error?: string; a
   localStorage.setItem(REMOTE_KEY, url);
 
   const pinFallback = () => {
+    const pinned: Record<string, string> = {};
     for (const [t, v] of Object.entries(fallback)) {
-      if (v) document.documentElement.style.setProperty(t, v);
+      if (!v) continue;
+      document.documentElement.style.setProperty(t, v);
+      pinned[t] = v;
     }
+    localStorage.setItem(CUSTOM_KEY, JSON.stringify(pinned));
   };
 
   try {
@@ -64,7 +68,7 @@ export async function applyRemoteTheme(url: string): Promise<{ error?: string; a
     }
     return { applied: mapped.applied };
   } catch {
-
+    pinFallback();
     return { applied: [], error: "Stylesheet eingebunden, Farb-Mapping fehlgeschlagen (CORS)." };
   }
 }
