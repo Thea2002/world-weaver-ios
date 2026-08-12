@@ -9,6 +9,64 @@ export const THEMES: { id: ThemeName; label: string; swatch: string[] }[] = [
 
 const THEME_KEY = "mythic:theme";
 const CUSTOM_KEY = "mythic:custom-theme";
+const REMOTE_KEY = "mythic:remote-theme";
+const REMOTE_ID = "mythic-remote-theme";
+
+/** Extracts URLs from `@import url('…')`, `@import "…"` or a bare URL. */
+export function extractThemeUrls(raw: string): string[] {
+  const urls = new Set<string>();
+  for (const m of raw.matchAll(/@import\s+(?:url\(\s*)?['"]?(https?:\/\/[^'")\s]+)['"]?\s*\)?/gi)) {
+    urls.add(m[1]!);
+  }
+  if (!urls.size) {
+    for (const m of raw.matchAll(/https?:\/\/\S+\.(?:css|uss)(?:\?\S*)?/gi)) urls.add(m[0]!);
+  }
+  return [...urls];
+}
+
+/** Loads remote CSS via <link>, then maps recognised color vars onto our tokens. */
+export async function applyRemoteTheme(url: string): Promise<{ error?: string; applied: string[] }> {
+  if (typeof document === "undefined") return { applied: [] };
+  document.getElementById(REMOTE_ID)?.remove();
+  const link = document.createElement("link");
+  link.id = REMOTE_ID;
+  link.rel = "stylesheet";
+  link.href = url;
+  document.head.appendChild(link);
+  localStorage.setItem(REMOTE_KEY, url);
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return { applied: [], error: `Stylesheet geladen, Farben nicht lesbar (${res.status}).` };
+    const css = await res.text();
+    const mapped = importCustomTheme(css);
+    return { applied: mapped.applied };
+  } catch {
+    return { applied: [], error: "Stylesheet eingebunden, Farb-Mapping fehlgeschlagen (CORS)." };
+  }
+}
+
+export function restoreRemoteTheme() {
+  if (typeof localStorage === "undefined") return;
+  const url = localStorage.getItem(REMOTE_KEY);
+  if (!url || document.getElementById(REMOTE_ID)) return;
+  const link = document.createElement("link");
+  link.id = REMOTE_ID;
+  link.rel = "stylesheet";
+  link.href = url;
+  document.head.appendChild(link);
+}
+
+export function getRemoteTheme(): string | null {
+  if (typeof localStorage === "undefined") return null;
+  return localStorage.getItem(REMOTE_KEY);
+}
+
+export function clearRemoteTheme() {
+  if (typeof document === "undefined") return;
+  document.getElementById(REMOTE_ID)?.remove();
+  localStorage.removeItem(REMOTE_KEY);
+}
 
 export function applyTheme(name: ThemeName) {
   if (typeof document === "undefined") return;
