@@ -40,6 +40,12 @@ export async function applyRemoteTheme(url: string): Promise<{ error?: string; a
     if (!res.ok) return { applied: [], error: `Stylesheet geladen, Farben nicht lesbar (${res.status}).` };
     const css = await res.text();
     const mapped = importCustomTheme(css);
+    // Only keep the token mapping when we got a readable background/foreground pair,
+    // otherwise the imported stylesheet would leave unreadable text behind.
+    if (!(mapped.applied.includes("--background") && mapped.applied.includes("--foreground"))) {
+      clearCustomTheme();
+      return { applied: [], error: "Stylesheet eingebunden — Farbpalette nicht eindeutig, Preset-Farben bleiben aktiv." };
+    }
     return { applied: mapped.applied };
   } catch {
     return { applied: [], error: "Stylesheet eingebunden, Farb-Mapping fehlgeschlagen (CORS)." };
@@ -112,9 +118,15 @@ export function importCustomTheme(raw: string): { applied: string[]; error?: str
   };
 
   const map: [string, string | undefined][] = [
-    ["--background", find("background", "bg", "base00", "editor.background")],
-    ["--foreground", find("foreground", "fg", "text", "base05")],
-    ["--surface", find("surface", "panel", "sidebar", "base01")],
+    [
+      "--background",
+      find("primary-background-color", "main-background-color", "background", "bg", "base00", "editor.background"),
+    ],
+    ["--foreground", find("primary-text-color", "title-text-color", "foreground", "fg", "text", "base05")],
+    [
+      "--surface",
+      find("secondary-background-color", "tertiary-background-color", "surface", "panel", "sidebar", "base01"),
+    ],
     ["--primary", find("accent", "primary", "blue", "base0d")],
     ["--secondary", find("secondary", "green", "base0b")],
     ["--destructive", find("error", "red", "base08")],
