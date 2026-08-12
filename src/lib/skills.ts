@@ -253,18 +253,36 @@ export const SKILLS: Skill[] = [
     folder: "World/Orte",
     kind: "location",
     tag: "settlement",
-    prompt: "Du bist der Settlement Generator. Erstelle eine lebendige Siedlung auf Deutsch.",
+    prompt:
+      "Du bist der Settlement / Town Generator. Erstelle eine komplette, spielfertige Siedlung auf Deutsch — vorlesbare Beschreibung, Struktur, Orte, NSCs und SL-Werkzeuge.",
     template: (i) => `${fm("settlement", i, "settlement")}# 🏘️ ${i}
 
-> [!info|statblock] Größe, Einwohnerzahl, Herrschaftsform
+> [!info|statblock] Typ, Einwohnerzahl, dominante Bevölkerung
 
-## 🌫️ Atmosphere & Sounds
+## 📖 Overview (zum Vorlesen)
 
-## 🏛️ Districts
+## 🏛️ Structure
+- **Regierung:**
+- **Wirtschaft:**
+- **Verteidigung:**
 
-## 📍 Key Locations
+## 📍 Notable Locations (4–6)
+1. **[[]]** —
 
-## 🗡️ Local Factions
+## 👥 NPCs (3–5)
+- **[[]]** — Persönlichkeit · Hook:
+
+## 🗣️ Rumors
+1.
+
+## 🪝 Plot Hooks
+1.
+
+## 🕵️ Secrets (nur SL)
+1.
+
+## 📰 Current Events
+1.
 `,
   },
   {
