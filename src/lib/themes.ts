@@ -9,6 +9,91 @@ export const THEMES: { id: ThemeName; label: string; swatch: string[] }[] = [
 
 const THEME_KEY = "mythic:theme";
 const CUSTOM_KEY = "mythic:custom-theme";
+const REMOTE_KEY = "mythic:remote-theme";
+const REMOTE_ID = "mythic-remote-theme";
+
+/** Extracts URLs from `@import url('…')`, `@import "…"` or a bare URL. */
+export function extractThemeUrls(raw: string): string[] {
+  const urls = new Set<string>();
+  for (const m of raw.matchAll(/@import\s+(?:url\(\s*)?['"]?(https?:\/\/[^'")\s]+)['"]?\s*\)?/gi)) {
+    urls.add(m[1]!);
+  }
+  if (!urls.size) {
+    for (const m of raw.matchAll(/https?:\/\/\S+\.(?:css|uss)(?:\?\S*)?/gi)) urls.add(m[0]!);
+  }
+  return [...urls];
+}
+
+/** Loads remote CSS via <link>, then maps recognised color vars onto our tokens. */
+const TOKENS = ["--background", "--foreground", "--surface", "--primary", "--secondary", "--destructive"];
+
+export async function applyRemoteTheme(url: string): Promise<{ error?: string; applied: string[] }> {
+  if (typeof document === "undefined") return { applied: [] };
+  // Snapshot the currently effective tokens: a remote stylesheet may define the same
+  // variable names and would otherwise repaint the app with unreadable colors.
+  const computed = getComputedStyle(document.documentElement);
+  const fallback = Object.fromEntries(TOKENS.map((t) => [t, computed.getPropertyValue(t).trim()]));
+
+  document.getElementById(REMOTE_ID)?.remove();
+  const link = document.createElement("link");
+  link.id = REMOTE_ID;
+  link.rel = "stylesheet";
+  link.href = url;
+  document.head.appendChild(link);
+  localStorage.setItem(REMOTE_KEY, url);
+
+  const pinFallback = () => {
+    const pinned: Record<string, string> = {};
+    for (const [t, v] of Object.entries(fallback)) {
+      if (!v) continue;
+      document.documentElement.style.setProperty(t, v);
+      pinned[t] = v;
+    }
+    localStorage.setItem(CUSTOM_KEY, JSON.stringify(pinned));
+  };
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      pinFallback();
+      return { applied: [], error: `Stylesheet geladen, Farben nicht lesbar (${res.status}).` };
+    }
+    const css = await res.text();
+    const mapped = importCustomTheme(css);
+    // Only keep the token mapping when we got a readable background/foreground pair.
+    if (!(mapped.applied.includes("--background") && mapped.applied.includes("--foreground"))) {
+      clearCustomTheme();
+      pinFallback();
+      return { applied: [], error: "Stylesheet eingebunden — Farbpalette unklar, Preset-Farben bleiben aktiv." };
+    }
+    return { applied: mapped.applied };
+  } catch {
+    pinFallback();
+    return { applied: [], error: "Stylesheet eingebunden, Farb-Mapping fehlgeschlagen (CORS)." };
+  }
+}
+
+export function restoreRemoteTheme() {
+  if (typeof localStorage === "undefined") return;
+  const url = localStorage.getItem(REMOTE_KEY);
+  if (!url || document.getElementById(REMOTE_ID)) return;
+  const link = document.createElement("link");
+  link.id = REMOTE_ID;
+  link.rel = "stylesheet";
+  link.href = url;
+  document.head.appendChild(link);
+}
+
+export function getRemoteTheme(): string | null {
+  if (typeof localStorage === "undefined") return null;
+  return localStorage.getItem(REMOTE_KEY);
+}
+
+export function clearRemoteTheme() {
+  if (typeof document === "undefined") return;
+  document.getElementById(REMOTE_ID)?.remove();
+  localStorage.removeItem(REMOTE_KEY);
+}
 
 export function applyTheme(name: ThemeName) {
   if (typeof document === "undefined") return;
@@ -54,9 +139,15 @@ export function importCustomTheme(raw: string): { applied: string[]; error?: str
   };
 
   const map: [string, string | undefined][] = [
-    ["--background", find("background", "bg", "base00", "editor.background")],
-    ["--foreground", find("foreground", "fg", "text", "base05")],
-    ["--surface", find("surface", "panel", "sidebar", "base01")],
+    [
+      "--background",
+      find("primary-background-color", "main-background-color", "background", "bg", "base00", "editor.background"),
+    ],
+    ["--foreground", find("primary-text-color", "title-text-color", "foreground", "fg", "text", "base05")],
+    [
+      "--surface",
+      find("secondary-background-color", "tertiary-background-color", "surface", "panel", "sidebar", "base01"),
+    ],
     ["--primary", find("accent", "primary", "blue", "base0d")],
     ["--secondary", find("secondary", "green", "base0b")],
     ["--destructive", find("error", "red", "base08")],
