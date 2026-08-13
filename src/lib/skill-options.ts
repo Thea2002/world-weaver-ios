@@ -197,42 +197,69 @@ export const SKILL_OPTIONS: Record<string, SkillOption[]> = {
 
 export const ANY = "Beliebig";
 
+/** Multi-select: every option id maps to a list of chosen values. */
+export type Choices = Record<string, string[]>;
+
 export function optionsFor(skill: Skill): SkillOption[] {
   return SKILL_OPTIONS[skill.id] ?? [GENRE, TONE, LENGTH];
 }
 
-export function randomChoices(options: SkillOption[]): Record<string, string> {
-  const out: Record<string, string> = {};
+export function randomChoices(options: SkillOption[]): Choices {
+  const out: Choices = {};
   for (const o of options) {
     const pick = o.choices[Math.floor(Math.random() * o.choices.length)];
-    if (pick) out[o.id] = pick;
+    if (pick) out[o.id] = [pick];
   }
   return out;
 }
 
-/** Builds the user message: free input + all chosen options. */
-export function buildUserMessage(skill: Skill, input: string, selected: Record<string, string>) {
+const SHOP_SKILLS = new Set(["shop", "tavern", "magic-item", "spellbook", "building", "settlement"]);
+
+/** Shops, taverns and item vendors always get an offer table with emoji-tagged goods. */
+function offerTableRule(skill: Skill) {
+  if (!SHOP_SKILLS.has(skill.id)) return null;
+  return [
+    "Wenn Waren, Dienstleistungen, Speisen, Zaubertränke, Waffen, Rüstung, Kleidung oder Bücher vorkommen, gib IMMER eine Angebots-Tabelle in genau diesem Format aus (Markdown-Pipe-Tabelle, 4 Spalten, jede Ware mit passendem Emoji):",
+    "| Angebot | Wirkung / Verwendung | Kurze Beschreibung | Preis 🪙 |\n| --- | --- | --- | --- |\n| Nachtschattenwurz 🌿 | Wird für Schmerzmittel und Räucherwerk genutzt | Wächst nur an feuchten Nordhängen der Region | 4 sp |\n| Bruchstahl-Dolch 🗡️ | Leichte Waffe, 1d4 Stich | Umgeschmiedet aus Schlachtfeld-Resten | 2 gp |",
+    "6–12 Zeilen, Preise mit Währungseinheit passend zum Setting, keine leeren Zellen.",
+  ].join("\n\n");
+}
+
+/** Builds the user message: free input + all chosen options (multi-select aware). */
+export function buildUserMessage(skill: Skill, input: string, selected: Choices, settings: string[] = []) {
   const opts = optionsFor(skill)
     .map((o) => {
-      const v = selected[o.id];
-      return v && v !== ANY ? `- ${o.label}: ${v}` : null;
+      const v = (selected[o.id] ?? []).filter((x) => x && x !== ANY);
+      if (!v.length) return null;
+      return v.length === 1 ? `- ${o.label}: ${v[0]}` : `- ${o.label}: ${v.join(" + ")} (kombiniere alle genannten Aspekte)`;
     })
     .filter(Boolean);
 
   const lines = [
     input.trim() ? `Idee / Titel: ${input.trim()}` : "Idee / Titel: Überrasche mich (frei erfinden).",
-    opts.length ? `Vorgaben (müssen exakt eingehalten werden):\n${opts.join("\n")}` : "Keine weiteren Vorgaben — wähle passende Werte selbst.",
+    settings.length ? `Gewähltes Setting: ${settings.join(", ")}` : null,
+    opts.length
+      ? `Vorgaben (müssen exakt eingehalten werden):\n${opts.join("\n")}`
+      : "Keine weiteren Vorgaben — wähle passende Werte selbst.",
     "Wenn eine Vorgabe fehlt, wähle eine dazu passende Option und bleib in sich konsistent.",
-  ];
+  ].filter(Boolean) as string[];
   return lines.join("\n\n");
 }
 
-export function buildSystemPrompt(skill: Skill) {
+export function buildSystemPrompt(skill: Skill, settingGuide = "") {
   return [
     skill.prompt,
+    settingGuide
+      ? `Kanon-Vorgabe — alles (Orte, Tavernen, NSCs, Gegenstände, Götter, Währung, Namen) muss im gewählten Setting tatsächlich vorkommen können; nutze existierende Eigennamen des Settings, wo es passt:\n${settingGuide}`
+      : null,
     "Du schreibst direkt spielfertige Inhalte für eine Spielleitung: konkrete Namen, Zahlen, Preise, Gerüchte, Hooks und Geheimnisse — keine Platzhalter, keine Meta-Kommentare, keine Rückfragen.",
+    "Nutze passende Emojis: im Titel (z. B. `# Kräuterladen 🌿`), bei Abschnitts-Headings und bei einzelnen Waren, NSCs oder Orten. Sparsam und thematisch, nie dekorativer Emoji-Spam.",
+    offerTableRule(skill),
+    "Beginne mit einem YAML-Frontmatter-Block (`---`) mit den Feldern type, name, setting, tags sowie den wichtigsten Eigenschaften (z. B. Region, Wohlstand, Fraktion) — diese werden als Datenbank-Properties übernommen.",
     "Antworte ausschließlich in Markdown (keine Code-Fences um das gesamte Dokument). Halte dich an diese Struktur und fülle jeden Abschnitt aus:",
     skill.template("[Titel]"),
-    "Tabellen aus dem Template dürfen als ```csv-Blöcke mit Semikolon-Trennung ausgegeben werden. Verlinke verwandte Einträge als [[Wikilinks]].",
-  ].join("\n\n");
+    "Verlinke verwandte Einträge als [[Wikilinks]]. Für reine Datenlisten sind ```csv-Blöcke mit Semikolon-Trennung erlaubt, für Angebote/Preise nutze die Pipe-Tabelle.",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 }
