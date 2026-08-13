@@ -157,6 +157,24 @@ export function outgoingLinks(body: string): string[] {
   return [...body.matchAll(/!?\[\[([^\]|#]+)/g)].map((m) => m[1]!.trim());
 }
 
+/** Reads `---` frontmatter and `**Key:** value` lines so generated docs land in the database view. */
+export function frontmatterProperties(body: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  const fm = body.match(/^---\n([\s\S]*?)\n---/);
+  if (fm) {
+    for (const line of fm[1]!.split("\n")) {
+      const m = line.match(/^([\w -]+):\s*(.+)$/);
+      if (m) out[m[1]!.trim()] = m[2]!.trim().replace(/^["[]|["\]]$/g, "");
+    }
+  }
+  for (const m of body.matchAll(/^\*\*([^*:]{2,24}):\*\*\s*([^\n*|]{1,60})/gm)) {
+    const key = m[1]!.trim();
+    const val = m[2]!.trim().replace(/\[\[|\]\]/g, "");
+    if (val && !out[key]) out[key] = val;
+  }
+  return out;
+}
+
 export function useVault() {
   const [notes, setNotes] = useState<Note[]>([]);
 
