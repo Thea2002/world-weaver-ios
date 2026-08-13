@@ -201,19 +201,23 @@ export function useVault() {
     return next;
   }, []);
 
-  const create = useCallback((kind: NoteKind, title: string, body: string, folder = "Journal") => {
-    const note: Note = {
-      id: `n-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      title,
-      path: `${folder}/${title}.md`,
-      kind,
-      body,
-      properties: extractProperties(body),
-      updatedAt: Date.now(),
-    };
-    write([note, ...read()]);
-    return note;
-  }, []);
+  const create = useCallback(
+    (kind: NoteKind, title: string, body: string, folder = "Journal", properties: Record<string, string> = {}) => {
+      const note: Note = {
+        id: `n-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        title,
+        path: `${folder}/${title}.md`,
+        kind,
+        body,
+        properties: { ...properties, ...frontmatterProperties(body), ...extractProperties(body) },
+        relations: [],
+        updatedAt: Date.now(),
+      };
+      write([note, ...read()]);
+      return note;
+    },
+    [],
+  );
 
   const remove = useCallback((id: string) => {
     write(read().filter((n) => n.id !== id));
