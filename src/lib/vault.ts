@@ -193,7 +193,7 @@ export function useVault() {
     const next: Note = {
       ...note,
       updatedAt: Date.now(),
-      properties: { ...note.properties, ...extractProperties(note.body) },
+      properties: { ...note.properties, ...frontmatterProperties(note.body), ...extractProperties(note.body) },
     };
     if (idx >= 0) all[idx] = next;
     else all.unshift(next);
