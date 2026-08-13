@@ -1,6 +1,25 @@
 import { useCallback, useEffect, useState } from "react";
 
-export type NoteKind = "note" | "character" | "location" | "faction" | "lore" | "session";
+export type NoteKind =
+  | "note"
+  | "character"
+  | "location"
+  | "faction"
+  | "lore"
+  | "session"
+  | "npc"
+  | "deity"
+  | "item"
+  | "creature"
+  | "timeline"
+  | "rules";
+
+/** Link between two notes with a sentiment value from -10 (Feind) to +10 (bester Freund). */
+export type Relation = {
+  target: string; // note title
+  value: number; // -10 … +10
+  label?: string;
+};
 
 export type Note = {
   id: string;
@@ -9,10 +28,11 @@ export type Note = {
   kind: NoteKind;
   body: string;
   properties: Record<string, string>;
+  relations?: Relation[];
   updatedAt: number;
 };
 
-const KEY = "mythic:vault:v3";
+const KEY = "mythic:vault:v4";
 const listeners = new Set<() => void>();
 
 function emit() {
@@ -137,6 +157,24 @@ export function outgoingLinks(body: string): string[] {
   return [...body.matchAll(/!?\[\[([^\]|#]+)/g)].map((m) => m[1]!.trim());
 }
 
+/** Reads `---` frontmatter and `**Key:** value` lines so generated docs land in the database view. */
+export function frontmatterProperties(body: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  const fm = body.match(/^---\n([\s\S]*?)\n---/);
+  if (fm) {
+    for (const line of fm[1]!.split("\n")) {
+      const m = line.match(/^([\w -]+):\s*(.+)$/);
+      if (m) out[m[1]!.trim()] = m[2]!.trim().replace(/^["[]|["\]]$/g, "");
+    }
+  }
+  for (const m of body.matchAll(/^\*\*([^*:]{2,24}):\*\*\s*([^\n*|]{1,60})/gm)) {
+    const key = m[1]!.trim();
+    const val = m[2]!.trim().replace(/\[\[|\]\]/g, "");
+    if (val && !out[key]) out[key] = val;
+  }
+  return out;
+}
+
 export function useVault() {
   const [notes, setNotes] = useState<Note[]>([]);
 
@@ -155,7 +193,7 @@ export function useVault() {
     const next: Note = {
       ...note,
       updatedAt: Date.now(),
-      properties: { ...note.properties, ...extractProperties(note.body) },
+      properties: { ...note.properties, ...frontmatterProperties(note.body), ...extractProperties(note.body) },
     };
     if (idx >= 0) all[idx] = next;
     else all.unshift(next);
@@ -163,19 +201,23 @@ export function useVault() {
     return next;
   }, []);
 
-  const create = useCallback((kind: NoteKind, title: string, body: string, folder = "Journal") => {
-    const note: Note = {
-      id: `n-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      title,
-      path: `${folder}/${title}.md`,
-      kind,
-      body,
-      properties: extractProperties(body),
-      updatedAt: Date.now(),
-    };
-    write([note, ...read()]);
-    return note;
-  }, []);
+  const create = useCallback(
+    (kind: NoteKind, title: string, body: string, folder = "Journal", properties: Record<string, string> = {}) => {
+      const note: Note = {
+        id: `n-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        title,
+        path: `${folder}/${title}.md`,
+        kind,
+        body,
+        properties: { ...properties, ...frontmatterProperties(body), ...extractProperties(body) },
+        relations: [],
+        updatedAt: Date.now(),
+      };
+      write([note, ...read()]);
+      return note;
+    },
+    [],
+  );
 
   const remove = useCallback((id: string) => {
     write(read().filter((n) => n.id !== id));
