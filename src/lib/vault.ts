@@ -1,6 +1,25 @@
 import { useCallback, useEffect, useState } from "react";
 
-export type NoteKind = "note" | "character" | "location" | "faction" | "lore" | "session";
+export type NoteKind =
+  | "note"
+  | "character"
+  | "location"
+  | "faction"
+  | "lore"
+  | "session"
+  | "npc"
+  | "deity"
+  | "item"
+  | "creature"
+  | "timeline"
+  | "rules";
+
+/** Link between two notes with a sentiment value from -10 (Feind) to +10 (bester Freund). */
+export type Relation = {
+  target: string; // note title
+  value: number; // -10 … +10
+  label?: string;
+};
 
 export type Note = {
   id: string;
@@ -9,10 +28,11 @@ export type Note = {
   kind: NoteKind;
   body: string;
   properties: Record<string, string>;
+  relations?: Relation[];
   updatedAt: number;
 };
 
-const KEY = "mythic:vault:v3";
+const KEY = "mythic:vault:v4";
 const listeners = new Set<() => void>();
 
 function emit() {
