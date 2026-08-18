@@ -13,6 +13,7 @@ import {
   clearRemoteTheme,
   getRemoteTheme,
   extractThemeUrls,
+  REMOTE_PRESETS,
   type ThemeName,
 } from "@/lib/themes";
 
@@ -78,6 +79,26 @@ function Settings() {
                   <span key={c} className="size-4 rounded-full border border-border" style={{ background: c }} />
                 ))}
               </div>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-6">
+        <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+          Logseq-Themes (Ein-Tap, wird gespeichert)
+        </h2>
+        <div className="flex flex-wrap gap-1.5">
+          {REMOTE_PRESETS.map((p) => (
+            <button
+              key={p.url}
+              onClick={() => void loadRemote(p.url)}
+              disabled={loading}
+              className={`rounded-full border px-2.5 py-1 text-[11px] ${
+                remote === p.url ? "border-primary bg-primary/15 text-primary" : "border-border bg-surface-2 text-muted-foreground"
+              }`}
+            >
+              {p.emoji} {p.label}
             </button>
           ))}
         </div>
