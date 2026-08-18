@@ -4,6 +4,7 @@ import { ArrowLeft, Download, Eye, Code2, Trash2 } from "lucide-react";
 import { TabBar } from "@/components/TabBar";
 import { highlightMarkdown } from "@/lib/markdown";
 import { PreviewContent } from "@/components/PreviewContent";
+import { RelationPanel } from "@/components/RelationPanel";
 import { download, useVault } from "@/lib/vault";
 
 export const Route = createFileRoute("/note/$id")({
@@ -109,9 +110,15 @@ function NoteEditor() {
           <PreviewContent body={body} path={note.path} />
         )}
 
+        <RelationPanel
+          note={note}
+          allTitles={notes.filter((n) => n.id !== note.id).map((n) => n.title)}
+          onChange={(relations) => save({ ...note, body, relations })}
+        />
+
         <section className="mt-6">
           <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-            Auto-Properties
+            Properties
           </h2>
           <div className="card space-y-1.5">
             {Object.entries(note.properties).map(([k, v]) => (

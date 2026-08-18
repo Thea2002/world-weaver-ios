@@ -7,6 +7,15 @@ export const THEMES: { id: ThemeName; label: string; swatch: string[] }[] = [
   { id: "solarized", label: "Solarized", swatch: ["#002b36", "#268bd2", "#859900", "#cb4b16"] },
 ];
 
+/** Ein-Tap Logseq-Themes; werden wie Presets gespeichert und beim Start wiederhergestellt. */
+export const REMOTE_PRESETS: { label: string; url: string; emoji: string }[] = [
+  { label: "Bonofix", emoji: "🎨", url: "https://cdn.jsdelivr.net/gh/sansui233/logseq-bonofix-theme/custom.css" },
+  { label: "Laurel", emoji: "🌿", url: "https://cdn.jsdelivr.net/gh/pengx17/logseq-laurel-theme@master/custom.css" },
+  { label: "Cusgit", emoji: "🧩", url: "https://cdn.jsdelivr.net/gh/mendax1234/logseq-cusgit-theme/custom.css" },
+  { label: "Bear", emoji: "🐻", url: "https://rcvd.github.io/logseq-bear-theme/bear.css" },
+  { label: "Things", emoji: "✅", url: "https://rcvd.github.io/logseq-things-theme/things.css" },
+];
+
 const THEME_KEY = "mythic:theme";
 const CUSTOM_KEY = "mythic:custom-theme";
 const REMOTE_KEY = "mythic:remote-theme";
