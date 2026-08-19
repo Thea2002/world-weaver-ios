@@ -175,7 +175,24 @@ export function frontmatterProperties(body: string): Record<string, string> {
   return out;
 }
 
+/** Guarantees the document starts with a markdown H1 (first line is always a heading). */
+export function ensureHeading(body: string, title: string): string {
+  const lines = body.split("\n");
+  let i = 0;
+  if (/^---\s*$/.test(lines[0] ?? "")) {
+    const close = lines.findIndex((l, idx) => idx > 0 && /^---\s*$/.test(l));
+    if (close > 0) i = close + 1;
+  }
+  while (i < lines.length && lines[i]!.trim() === "") i++;
+  const first = lines[i];
+  if (first === undefined) return `${body.replace(/\s*$/, "")}\n\n# ${title}\n`;
+  if (/^#{1,6}\s+\S/.test(first)) return body;
+  lines[i] = `# ${first.replace(/^#+\s*/, "").trim() || title}`;
+  return lines.join("\n");
+}
+
 export function useVault() {
+
   const [notes, setNotes] = useState<Note[]>([]);
 
   useEffect(() => {
