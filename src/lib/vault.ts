@@ -207,10 +207,12 @@ export function useVault() {
   const save = useCallback((note: Note) => {
     const all = read();
     const idx = all.findIndex((n) => n.id === note.id);
+    const body = ensureHeading(note.body, note.title);
     const next: Note = {
       ...note,
+      body,
       updatedAt: Date.now(),
-      properties: { ...note.properties, ...frontmatterProperties(note.body), ...extractProperties(note.body) },
+      properties: { ...note.properties, ...frontmatterProperties(body), ...extractProperties(body) },
     };
     if (idx >= 0) all[idx] = next;
     else all.unshift(next);
@@ -219,7 +221,9 @@ export function useVault() {
   }, []);
 
   const create = useCallback(
-    (kind: NoteKind, title: string, body: string, folder = "Journal", properties: Record<string, string> = {}) => {
+    (kind: NoteKind, rawTitle: string, rawBody: string, folder = "Journal", properties: Record<string, string> = {}) => {
+      const title = rawTitle;
+      const body = ensureHeading(rawBody, title);
       const note: Note = {
         id: `n-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         title,
