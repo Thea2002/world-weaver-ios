@@ -175,7 +175,24 @@ export function frontmatterProperties(body: string): Record<string, string> {
   return out;
 }
 
+/** Guarantees the document starts with a markdown H1 (first line is always a heading). */
+export function ensureHeading(body: string, title: string): string {
+  const lines = body.split("\n");
+  let i = 0;
+  if (/^---\s*$/.test(lines[0] ?? "")) {
+    const close = lines.findIndex((l, idx) => idx > 0 && /^---\s*$/.test(l));
+    if (close > 0) i = close + 1;
+  }
+  while (i < lines.length && lines[i]!.trim() === "") i++;
+  const first = lines[i];
+  if (first === undefined) return `${body.replace(/\s*$/, "")}\n\n# ${title}\n`;
+  if (/^#{1,6}\s+\S/.test(first)) return body;
+  lines[i] = `# ${first.replace(/^#+\s*/, "").trim() || title}`;
+  return lines.join("\n");
+}
+
 export function useVault() {
+
   const [notes, setNotes] = useState<Note[]>([]);
 
   useEffect(() => {
@@ -190,10 +207,12 @@ export function useVault() {
   const save = useCallback((note: Note) => {
     const all = read();
     const idx = all.findIndex((n) => n.id === note.id);
+    const body = ensureHeading(note.body, note.title);
     const next: Note = {
       ...note,
+      body,
       updatedAt: Date.now(),
-      properties: { ...note.properties, ...frontmatterProperties(note.body), ...extractProperties(note.body) },
+      properties: { ...note.properties, ...frontmatterProperties(body), ...extractProperties(body) },
     };
     if (idx >= 0) all[idx] = next;
     else all.unshift(next);
@@ -202,7 +221,9 @@ export function useVault() {
   }, []);
 
   const create = useCallback(
-    (kind: NoteKind, title: string, body: string, folder = "Journal", properties: Record<string, string> = {}) => {
+    (kind: NoteKind, rawTitle: string, rawBody: string, folder = "Journal", properties: Record<string, string> = {}) => {
+      const title = rawTitle;
+      const body = ensureHeading(rawBody, title);
       const note: Note = {
         id: `n-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         title,
