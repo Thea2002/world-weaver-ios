@@ -61,7 +61,7 @@ export function LiveEditor({
   onChange,
 }: {
   body: string;
-  path?: string;
+  path?: string | undefined;
   onChange: (value: string) => void;
 }) {
   const chunks = useMemo(() => chunk(body), [body]);

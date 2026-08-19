@@ -54,7 +54,7 @@ export function parseLinkTarget(raw: string) {
 }
 
 /** Preview renderer: markdown + inline CSS/SVG, CSV tables and tap-to-navigate wikilinks. */
-export function PreviewContent({ body, path }: { body: string; path?: string }) {
+export function PreviewContent({ body, path }: { body: string; path?: string | undefined }) {
   const { notes, create } = useVault();
   const navigate = useNavigate();
   const isCsvFile = !!path && /\.(csv|tsv)$/i.test(path);
