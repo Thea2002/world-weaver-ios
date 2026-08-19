@@ -1,11 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Download, Eye, Code2, Trash2 } from "lucide-react";
+import { ArrowLeft, Download, Eye, Code2, Trash2, PenLine, Check } from "lucide-react";
 import { TabBar } from "@/components/TabBar";
 import { highlightMarkdown } from "@/lib/markdown";
 import { PreviewContent } from "@/components/PreviewContent";
+import { LiveEditor } from "@/components/LiveEditor";
+import { PropertiesPanel } from "@/components/PropertiesPanel";
 import { RelationPanel } from "@/components/RelationPanel";
 import { download, useVault } from "@/lib/vault";
+
 
 export const Route = createFileRoute("/note/$id")({
   head: () => ({
