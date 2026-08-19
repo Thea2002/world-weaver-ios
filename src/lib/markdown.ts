@@ -42,7 +42,8 @@ export function renderMarkdown(source: string, resolve?: (title: string) => stri
       const [name, alias] = target.split("|");
       const title = name!.trim();
       const id = resolve?.(title);
-      return `<a class="md-wikilink${id ? "" : " md-wikilink-missing"}" href="${id ? `/note/${id}` : "#"}">${(alias ?? title).trim()}</a>`;
+      const label = (alias ?? title).trim();
+      return `<a class="md-wikilink${id ? "" : " md-wikilink-missing"}" data-title="${title.replace(/"/g, "&quot;")}" href="${id ? `/note/${id}` : "#new"}">${label}</a>`;
     });
 
   const html = marked.parse(withLinks, { async: false }) as string;
@@ -50,7 +51,8 @@ export function renderMarkdown(source: string, resolve?: (title: string) => stri
 
   return DOMPurify.sanitize(html, {
     USE_PROFILES: { html: true, svg: true, svgFilters: true },
-    ADD_ATTR: ["style", "target", "class", "viewBox", "role", "aria-label"],
+    ADD_ATTR: ["style", "target", "class", "viewBox", "role", "aria-label", "data-title"],
+
   });
 }
 
