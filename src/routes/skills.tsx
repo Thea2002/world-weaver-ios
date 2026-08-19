@@ -7,6 +7,7 @@ import { ANY, buildSystemPrompt, buildUserMessage, optionsFor, randomChoices, ty
 import { LORE_SETTINGS, settingGuides } from "@/lib/lore-settings";
 import { generateContent } from "@/lib/generate.functions";
 import { useVault } from "@/lib/vault";
+import { useSkillOverrides } from "@/lib/skill-store";
 
 export const Route = createFileRoute("/skills")({
   head: () => ({
@@ -35,6 +36,7 @@ function titleFromMarkdown(md: string, fallback: string) {
 
 function Skills() {
   const { create } = useVault();
+  const { overrides, setOverride, resolve } = useSkillOverrides();
   const navigate = useNavigate();
   const [active, setActive] = useState<Skill | null>(null);
   const [input, setInput] = useState("");
@@ -44,6 +46,7 @@ function Skills() {
   const [error, setError] = useState<string>();
   const [showPrompt, setShowPrompt] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [draft, setDraft] = useState<{ prompt: string; template: string } | null>(null);
 
   useEffect(() => {
     const raw = localStorage.getItem(SETTING_KEY);
@@ -156,6 +159,8 @@ function Skills() {
         {SKILLS.map((s) => {
           const isOpen = active?.id === s.id;
           const options = optionsFor(s);
+          const rs = resolve(s);
+          const edited = !!overrides[s.id];
           return (
             <li key={s.id} className="card">
               <button onClick={() => openSkill(s)} className="flex w-full items-start gap-3 text-left">
@@ -203,7 +208,7 @@ function Skills() {
                   })}
 
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <button onClick={() => void generate(s, selected)} disabled={busy} className="btn-primary">
+                    <button onClick={() => void generate(rs, selected)} disabled={busy} className="btn-primary">
                       {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
                       {busy ? "Generiere…" : "Generieren & speichern"}
                     </button>
@@ -211,7 +216,7 @@ function Skills() {
                       onClick={() => {
                         const rnd = randomChoices(options);
                         setSelected(rnd);
-                        void generate(s, rnd);
+                        void generate(rs, rnd);
                       }}
                       disabled={busy}
                       className="btn-ghost px-3"
@@ -221,7 +226,7 @@ function Skills() {
                     <button
                       onClick={() => {
                         const title = input.trim() || `Neu: ${s.name}`;
-                        const note = saveNote(s, s.template(title), title, propertiesFrom(s, selected));
+                        const note = saveNote(rs, rs.template(title), title, propertiesFrom(s, selected));
                         navigate({ to: "/note/$id", params: { id: note.id } });
                       }}
                       className="btn-ghost px-3"
@@ -233,32 +238,69 @@ function Skills() {
                   {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
 
                   <button
-                    onClick={() => setShowPrompt((v) => !v)}
+                    onClick={() => {
+                      setShowPrompt((v) => !v);
+                      setDraft({ prompt: rs.prompt, template: rs.template("{{auto_title}}") });
+                    }}
                     className="mt-3 text-[11px] font-semibold text-primary"
                   >
-                    {showPrompt ? "Prompt verbergen" : "System-Prompt ansehen"}
+                    {showPrompt ? "Prompt schließen" : edited ? "Prompt bearbeiten (angepasst ✏️)" : "Prompt ansehen & bearbeiten"}
                   </button>
-                  {showPrompt && (
-                    <div className="mt-2">
-                      <pre className="max-h-64 overflow-auto rounded-xl border border-border bg-surface-2 p-3 text-[11px] leading-relaxed whitespace-pre-wrap">
-                        {`${buildSystemPrompt(s, settingGuides(settings))}\n\n---\n\n${buildUserMessage(
-                          s,
-                          input || "{{input}}",
-                          selected,
-                          settingLabels,
-                        )}`}
-                      </pre>
-                      <button
-                        onClick={() => {
-                          void navigator.clipboard.writeText(systemPrompt(s, input || "{{input}}"));
-                          setCopied(true);
-                          setTimeout(() => setCopied(false), 1200);
-                        }}
-                        className="btn-ghost mt-2"
-                      >
-                        {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-                        {copied ? "Kopiert" : "Prompt kopieren"}
-                      </button>
+                  {showPrompt && draft && (
+                    <div className="mt-2 space-y-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                        System-Prompt
+                      </p>
+                      <textarea
+                        value={draft.prompt}
+                        onChange={(e) => setDraft({ ...draft, prompt: e.target.value })}
+                        rows={5}
+                        spellCheck={false}
+                        className="w-full rounded-xl border border-border bg-surface-2 p-3 font-mono text-[11px] leading-relaxed text-foreground outline-none"
+                        aria-label="System-Prompt bearbeiten"
+                      />
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                        Output-Vorlage (Platzhalter: {"{{auto_title}}"})
+                      </p>
+                      <textarea
+                        value={draft.template}
+                        onChange={(e) => setDraft({ ...draft, template: e.target.value })}
+                        rows={12}
+                        spellCheck={false}
+                        className="w-full rounded-xl border border-border bg-surface-2 p-3 font-mono text-[11px] leading-relaxed text-foreground outline-none"
+                        aria-label="Output-Vorlage bearbeiten"
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => {
+                            setOverride(s.id, { prompt: draft.prompt, template: draft.template });
+                            setCopied(false);
+                          }}
+                          className="btn-primary"
+                        >
+                          <Check className="size-3.5" /> Prompt speichern
+                        </button>
+                        <button
+                          onClick={() => {
+                            setOverride(s.id, null);
+                            setDraft({ prompt: s.prompt, template: s.template("{{auto_title}}") });
+                          }}
+                          className="btn-ghost px-3"
+                        >
+                          Zurücksetzen
+                        </button>
+                        <button
+                          onClick={() => {
+                            void navigator.clipboard.writeText(systemPrompt(rs, input || "{{input}}"));
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 1200);
+                          }}
+                          className="btn-ghost px-3"
+                        >
+                          {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+                          {copied ? "Kopiert" : "Kopieren"}
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
