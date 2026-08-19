@@ -31,7 +31,7 @@ function NoteEditor() {
   const [doc, setDoc] = useState<{ id: string; body: string }>({ id: "", body: "" });
   const body = doc.id === id ? doc.body : (note?.body ?? "");
   const setBody = (value: string) => setDoc({ id, body: value });
-  const [mode, setMode] = useState<"source" | "preview">("source");
+  const [mode, setMode] = useState<"live" | "source" | "preview">("live");
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -63,7 +63,13 @@ function NoteEditor() {
           <div className="min-w-0 flex-1">
             <p className="truncate font-display text-base font-semibold text-foreground">{note.title}</p>
             <p className="truncate text-[11px] text-muted-foreground">
-              {saved ? "Gespeichert" : note.path}
+              {saved ? (
+                <span className="inline-flex items-center gap-1 text-primary">
+                  <Check className="size-3" /> Automatisch gespeichert
+                </span>
+              ) : (
+                note.path
+              )}
             </p>
           </div>
           <button onClick={() => download(note)} className="btn-ghost" aria-label=".md exportieren">
@@ -82,7 +88,7 @@ function NoteEditor() {
         </div>
 
         <div className="mx-auto mt-3 flex max-w-lg rounded-xl bg-muted p-1">
-          {(["source", "preview"] as const).map((m) => (
+          {(["live", "source", "preview"] as const).map((m) => (
             <button
               key={m}
               onClick={() => setMode(m)}
@@ -90,15 +96,17 @@ function NoteEditor() {
                 mode === m ? "bg-primary text-primary-foreground" : "text-muted-foreground"
               }`}
             >
-              {m === "source" ? <Code2 className="size-3.5" /> : <Eye className="size-3.5" />}
-              {m === "source" ? "Source" : "Preview"}
+              {m === "live" ? <PenLine className="size-3.5" /> : m === "source" ? <Code2 className="size-3.5" /> : <Eye className="size-3.5" />}
+              {m === "live" ? "Live" : m === "source" ? "Source" : "Preview"}
             </button>
           ))}
         </div>
       </header>
 
       <main className="mx-auto max-w-lg px-4 py-4">
-        {mode === "source" ? (
+        {mode === "live" ? (
+          <LiveEditor body={body} path={note.path} onChange={setBody} />
+        ) : mode === "source" ? (
           <div className="editor-stack">
             <pre className="editor-highlight" aria-hidden dangerouslySetInnerHTML={{ __html: highlightMarkdown(body) + "\n" }} />
             <textarea
@@ -119,19 +127,9 @@ function NoteEditor() {
           onChange={(relations) => save({ ...note, body, relations })}
         />
 
-        <section className="mt-6">
-          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-            Properties
-          </h2>
-          <div className="card space-y-1.5">
-            {Object.entries(note.properties).map(([k, v]) => (
-              <div key={k} className="flex gap-3 text-xs">
-                <span className="w-24 shrink-0 text-muted-foreground">{k}</span>
-                <span className="text-foreground">{v}</span>
-              </div>
-            ))}
-          </div>
-        </section>
+        <div className="mt-6">
+          <PropertiesPanel entries={Object.entries(note.properties)} />
+        </div>
       </main>
       <TabBar />
     </div>
