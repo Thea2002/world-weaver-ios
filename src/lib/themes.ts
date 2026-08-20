@@ -14,6 +14,21 @@ export const REMOTE_PRESETS: { label: string; url: string; emoji: string }[] = [
   { label: "Cusgit", emoji: "🧩", url: "https://cdn.jsdelivr.net/gh/mendax1234/logseq-cusgit-theme/custom.css" },
   { label: "Bear", emoji: "🐻", url: "https://rcvd.github.io/logseq-bear-theme/bear.css" },
   { label: "Things", emoji: "✅", url: "https://rcvd.github.io/logseq-things-theme/things.css" },
+  {
+    label: "Obsidian Things",
+    emoji: "🟡",
+    url: "https://cdn.jsdelivr.net/gh/colineckert/obsidian-things@master/obsidian-things.css",
+  },
+  {
+    label: "Minimal (deathau)",
+    emoji: "⚪",
+    url: "https://cdn.jsdelivr.net/gh/deathau/minimal-obsidian-theme@master/obsidian.css",
+  },
+  {
+    label: "Ayu Mirage",
+    emoji: "🌇",
+    url: "https://cdn.jsdelivr.net/gh/deathau/ayu-obsidian@master/obsidian.css",
+  },
 ];
 
 const THEME_KEY = "mythic:theme";

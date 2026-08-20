@@ -1,4 +1,5 @@
 import type { NoteKind } from "@/lib/vault";
+import { SKILL_REFS } from "@/lib/skill-refs";
 
 export type Skill = {
   id: string;
@@ -18,7 +19,7 @@ export type Skill = {
 const fm = (type: string, name: string, tags: string) =>
   `---\ntype: ${type}\nname: "${name}"\ntags: [${tags}]\n---\n\n`;
 
-export const SKILLS: Skill[] = [
+const BASE_SKILLS: Skill[] = [
   {
     id: "dashboard",
     name: "Dashboard",
@@ -591,6 +592,24 @@ Zauber;Grad;Schule
 `,
   },
 ];
+
+/**
+ * The user's own generator pack (skill_build/references) replaces the built-in
+ * scaffolds: each skill uses its full Notion-style template as output format.
+ */
+export const SKILLS: Skill[] = BASE_SKILLS.map((s) => {
+  const ref = SKILL_REFS[s.id];
+  if (!ref) return s;
+  return {
+    ...s,
+    prompt: `${s.prompt}\n\nDu arbeitest mit einer festen Vorlage aus dem Generator-Pack des Nutzers. Übernimm deren Struktur (Überschriften, Callouts, Tabellenspalten, Emojis, [[Wikilinks]]) exakt und ersetze jeden Platzhalter in eckigen Klammern durch konkreten Inhalt. Gib keine Platzhalter, Beispielhinweise oder Meta-Kommentare aus.`,
+    template: (input: string) =>
+      ref
+        .replace(/\[Name[^\]\n]*\]/g, input)
+        .replace(/\[Titel[^\]\n]*\]/g, input)
+        .replace(/^(#\s*(?:\p{Extended_Pictographic}\uFE0F?\s*)?)\*\*.*?\*\*\s*$/mu, `$1**${input}**`),
+  };
+});
 
 /** Full system prompt with the user input interpolated — for agents/AI tooling. */
 export function systemPrompt(skill: Skill, input: string) {
