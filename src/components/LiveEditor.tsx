@@ -59,10 +59,12 @@ export function LiveEditor({
   body,
   path,
   onChange,
+  hideFrontmatter = false,
 }: {
   body: string;
   path?: string | undefined;
   onChange: (value: string) => void;
+  hideFrontmatter?: boolean;
 }) {
   const chunks = useMemo(() => chunk(body), [body]);
   const [editing, setEditing] = useState<number | null>(null);
@@ -111,9 +113,11 @@ export function LiveEditor({
             aria-label="Markdown Quelltext dieses Blocks"
           />
         ) : c.isFrontmatter ? (
-          <div key={`f-${c.start}`} onDoubleClick={() => open(c, i)}>
-            <PropertiesPanel entries={frontmatterEntries(c.text)} />
-          </div>
+          hideFrontmatter ? null : (
+            <div key={`f-${c.start}`} onDoubleClick={() => open(c, i)}>
+              <PropertiesPanel entries={frontmatterEntries(c.text)} />
+            </div>
+          )
         ) : (
           <div key={`p-${c.start}`} className="live-block" onClick={() => open(c, i)}>
             <PreviewContent body={c.text} path={path} />
