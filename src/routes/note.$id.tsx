@@ -7,6 +7,7 @@ import { PreviewContent } from "@/components/PreviewContent";
 import { LiveEditor } from "@/components/LiveEditor";
 import { PropertiesPanel } from "@/components/PropertiesPanel";
 import { RelationPanel } from "@/components/RelationPanel";
+import { ExpandPanel } from "@/components/ExpandPanel";
 import { download, useVault } from "@/lib/vault";
 
 
@@ -105,7 +106,7 @@ function NoteEditor() {
 
       <main className="mx-auto max-w-lg px-4 py-4">
         {mode === "live" ? (
-          <LiveEditor body={body} path={note.path} onChange={setBody} />
+          <LiveEditor body={body} path={note.path} onChange={setBody} hideFrontmatter />
         ) : mode === "source" ? (
           <div className="editor-stack">
             <pre className="editor-highlight" aria-hidden dangerouslySetInnerHTML={{ __html: highlightMarkdown(body) + "\n" }} />
@@ -120,6 +121,12 @@ function NoteEditor() {
         ) : (
           <PreviewContent body={body} path={note.path} />
         )}
+
+        <ExpandPanel
+          note={note}
+          body={body}
+          onAppend={(md) => setBody(`${body.replace(/\s*$/, "")}\n\n${md}\n`)}
+        />
 
         <RelationPanel
           note={note}
