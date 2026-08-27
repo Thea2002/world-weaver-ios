@@ -1,8 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, Share2, Globe2, Sparkles, Table2, Search, Settings } from "lucide-react";
+import { BookOpen, Share2, Globe2, Sparkles, Table2, Search, Settings, Home } from "lucide-react";
 
 const TABS = [
-  { to: "/", label: "Journal", icon: BookOpen },
+  { to: "/", label: "Journal", icon: Home },
   { to: "/graph", label: "Graph", icon: Share2 },
   { to: "/world", label: "World", icon: Globe2 },
   { to: "/skills", label: "Skills", icon: Sparkles },
@@ -24,8 +24,10 @@ export function TabBar() {
             <li key={to} className="flex-1">
               <Link
                 to={to}
-                className={`flex flex-col items-center gap-1 rounded-xl py-1.5 text-[9px] font-medium tracking-wide transition-colors ${
-                  active ? "text-primary" : "text-muted-foreground"
+                className={`flex flex-col items-center gap-1 rounded-xl py-1.5 text-[9px] font-medium tracking-wide transition-all duration-200 ${
+                  active 
+                    ? "text-primary bg-primary/10" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-surface-2"
                 }`}
               >
                 <Icon className="size-[20px]" strokeWidth={active ? 2.4 : 1.8} />

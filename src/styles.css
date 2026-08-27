@@ -188,7 +188,9 @@
   background: var(--color-surface);
   padding: 0.875rem 1rem;
   box-shadow: 0 1px 0 color-mix(in oklab, white 6%, transparent) inset;
+  transition: all 0.2s ease;
 }
+
 
 @utility chip {
   display: inline-flex;
@@ -214,7 +216,10 @@
   padding: 0.45rem 0.9rem;
   font-size: 0.75rem;
   font-weight: 700;
+  transition: all 0.2s ease;
 }
+
+
 
 @utility btn-ghost {
   display: inline-flex;
@@ -228,7 +233,9 @@
   padding: 0.45rem 0.55rem;
   font-size: 0.75rem;
   font-weight: 600;
+  transition: all 0.2s ease;
 }
+
 
 /* ---------- Source editor with syntax highlight overlay ---------- */
 .editor-stack {
@@ -283,6 +290,7 @@
   line-height: 1.7;
   color: var(--color-foreground);
 }
+
 .markdown-preview h1,
 .markdown-preview h2,
 .markdown-preview h3 {
@@ -291,14 +299,43 @@
   line-height: 1.25;
   margin: 1.25em 0 0.5em;
 }
-.markdown-preview h1 { font-size: 1.6rem; margin-top: 0; }
-.markdown-preview h2 { font-size: 1.25rem; }
-.markdown-preview h3 { font-size: 1.05rem; }
-.markdown-preview p { margin: 0.7em 0; }
+
+.markdown-preview h1 {
+  font-size: 1.6rem;
+  margin-top: 0;
+  color: var(--color-primary);
+  border-bottom: 2px solid var(--color-primary);
+  padding-bottom: 0.3em;
+}
+
+.markdown-preview h2 {
+  font-size: 1.25rem;
+  color: var(--color-primary);
+}
+
+.markdown-preview h3 {
+  font-size: 1.05rem;
+  color: var(--color-accent);
+}
+
+.markdown-preview p {
+  margin: 0.7em 0;
+  color: var(--color-foreground);
+}
+
 .markdown-preview ul,
-.markdown-preview ol { margin: 0.7em 0 0.7em 1.25em; }
-.markdown-preview ul { list-style: disc; }
-.markdown-preview ol { list-style: decimal; }
+.markdown-preview ol {
+  margin: 0.7em 0 0.7em 1.25em;
+}
+
+.markdown-preview ul {
+  list-style: disc;
+}
+
+.markdown-preview ol {
+  list-style: decimal;
+}
+
 .markdown-preview blockquote {
   margin: 0.9em 0;
   border-left: 3px solid var(--color-primary);
@@ -307,6 +344,7 @@
   border-radius: 0 var(--radius-md) var(--radius-md) 0;
   color: var(--color-muted-foreground);
 }
+
 .markdown-preview code {
   font-family: var(--font-mono);
   font-size: 0.85em;
@@ -314,6 +352,7 @@
   padding: 0.1em 0.35em;
   border-radius: 0.35rem;
 }
+
 .markdown-preview pre {
   background: var(--color-surface);
   padding: 0.9em;
@@ -321,7 +360,12 @@
   overflow-x: auto;
   border: 1px solid var(--color-border);
 }
-.markdown-preview pre code { background: transparent; padding: 0; }
+
+.markdown-preview pre code {
+  background: transparent;
+  padding: 0;
+}
+
 .markdown-preview table {
   width: 100%;
   border-collapse: collapse;
@@ -330,20 +374,48 @@
   display: block;
   overflow-x: auto;
 }
+
 .markdown-preview th,
 .markdown-preview td {
   border: 1px solid var(--color-border);
   padding: 0.45em 0.6em;
   text-align: left;
 }
-.markdown-preview th { background: var(--color-surface-2); }
-.markdown-preview hr { border-top: 1px solid var(--color-border); margin: 1.4em 0; }
+
+.markdown-preview th {
+  background: var(--color-surface-2);
+}
+
+.markdown-preview hr {
+  border-top: 1px solid var(--color-border);
+  margin: 1.4em 0;
+}
+
 .markdown-preview img,
-.markdown-preview svg { max-width: 100%; height: auto; display: block; margin: 1em auto; }
-.markdown-preview a { color: var(--color-primary); text-decoration: underline; }
-.md-wikilink { color: var(--color-accent); }
-.md-wikilink-missing { color: var(--color-destructive); text-decoration-style: dashed; }
-.md-embed { border-left-color: var(--color-accent); }
+.markdown-preview svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1em auto;
+}
+
+.markdown-preview a {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.md-wikilink {
+  color: var(--color-accent);
+}
+
+.md-wikilink-missing {
+  color: var(--color-destructive);
+  text-decoration-style: dashed;
+}
+
+.md-embed {
+  border-left-color: var(--color-accent);
+}
 
 /* ---------- Callouts ---------- */
 .md-callout {
@@ -354,13 +426,42 @@
   background: var(--color-surface);
   padding: 0.65em 0.9em;
 }
-.md-callout-title { margin: 0 0 0.2em; font-weight: 700; color: var(--color-primary); }
-.md-callout p:last-child { margin-bottom: 0; }
-.md-callout-danger, .md-callout-warning { border-left-color: var(--color-destructive); }
-.md-callout-danger .md-callout-title, .md-callout-warning .md-callout-title { color: var(--color-destructive); }
-.md-callout-tip, .md-callout-success { border-left-color: var(--color-accent); }
-.md-callout-tip .md-callout-title, .md-callout-success .md-callout-title { color: var(--color-accent); }
-.md-callout-statblock { background: var(--color-surface-2); font-family: var(--font-mono); font-size: 0.85em; }
+
+.md-callout-title {
+  margin: 0 0 0.2em;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.md-callout p:last-child {
+  margin-bottom: 0;
+}
+
+.md-callout-danger,
+.md-callout-warning {
+  border-left-color: var(--color-destructive);
+}
+
+.md-callout-danger .md-callout-title,
+.md-callout-warning .md-callout-title {
+  color: var(--color-destructive);
+}
+
+.md-callout-tip,
+.md-callout-success {
+  border-left-color: var(--color-accent);
+}
+
+.md-callout-tip .md-callout-title,
+.md-callout-success .md-callout-title {
+  color: var(--color-accent);
+}
+
+.md-callout-statblock {
+  background: var(--color-surface-2);
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
 
 /* ---------- CSV renderer ---------- */
 .csv-block {
@@ -370,8 +471,18 @@
   background: var(--color-surface);
   padding: 0.75rem 0.6rem;
 }
-.csv-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.csv-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+
+.csv-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.csv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
 .csv-table th,
 .csv-table td {
   border-bottom: 1px solid var(--color-border);
@@ -379,21 +490,39 @@
   text-align: left;
   white-space: nowrap;
 }
-.csv-table th { color: var(--color-primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; font-size: 10px; }
-.csv-table tbody tr:active { background: var(--color-surface-2); }
+
+.csv-table th {
+  color: var(--color-primary);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 10px;
+}
+
+.csv-table tbody tr:active {
+  background: var(--color-surface-2);
+}
 
 /* ---------- Obsidian-style live preview editor ---------- */
-.live-editor { min-height: 50vh; }
+.live-editor {
+  min-height: 50vh;
+}
 
 .live-block {
   border-radius: 0.6rem;
   padding: 0.1rem 0.4rem;
   margin: 0 -0.4rem;
-  transition: background-color 0.15s ease;
+  transition: all 0.2s ease;
   cursor: text;
 }
-.live-block:hover { background: color-mix(in srgb, var(--color-surface-2) 70%, transparent); }
-.live-block .markdown-preview > :first-child { margin-top: 0.2rem; }
+
+.live-block:hover {
+  background: color-mix(in srgb, var(--color-surface-2) 70%, transparent);
+}
+
+.live-block .markdown-preview > :first-child {
+  margin-top: 0.2rem;
+}
 
 .live-block-input {
   display: block;
@@ -410,4 +539,66 @@
   resize: none;
   outline: none;
   overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.live-block-input:focus {
+  border-color: var(--color-ring);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-ring) 20%, transparent);
+}
+
+/* ---------- Animations ---------- */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+
+/* ---------- Scrollbar Styling ---------- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-muted);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted-foreground);
+}
+
+/* ---------- Selection Styling ---------- */
+::selection {
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
 }
