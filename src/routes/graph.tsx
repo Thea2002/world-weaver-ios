@@ -110,11 +110,11 @@ function GraphView() {
     });
 
     return sorted.map((note, index) => {
-      const ring = Math.floor(index / 8);
-      const indexInRing = index % 8;
-      const ringSize = Math.min(8, sorted.length - ring * 8);
-      const radiusX = 145 + ring * 125;
-      const radiusY = 100 + ring * 90;
+      const ring = Math.floor(index / 12);
+      const indexInRing = index % 12;
+      const ringSize = Math.min(12, sorted.length - ring * 12);
+      const radiusX = 170 + ring * 100;
+      const radiusY = 130 + ring * 75;
       const angle = (indexInRing / Math.max(ringSize, 1)) * Math.PI * 2 - Math.PI / 2;
       return {
         note,
