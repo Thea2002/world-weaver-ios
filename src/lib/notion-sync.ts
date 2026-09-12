@@ -55,7 +55,8 @@ export function notionPageToNote(page: any, databaseId: string): Note {
   
   // Extrahiere Tags/Properties
   const props: Record<string, string> = {};
-  for (const [key, value] of Object.entries(properties)) {
+  for (const [key, raw] of Object.entries(properties)) {
+    const value = raw as any;
     if (key === "Titel" || key === "Name" || key === "title" || key === "name" || 
         key === "Typ" || key === "Type" || key === "type") {
       continue;
@@ -106,7 +107,7 @@ export function noteToNotionProperties(note: Note): Record<string, any> {
   // Pfad als Ordner
   const folder = note.path.split("/").slice(0, -1).join("/");
   if (folder) {
-    properties.Ordner = {
+    properties["Ordner"] = {
       select: { name: folder },
     };
   }
@@ -207,9 +208,10 @@ export async function syncToNotion(databaseId: string): Promise<{ synced: number
     const existingPageTitles = new Map<string, string>();
     if (existingPages) {
       for (const page of existingPages) {
-        const title = page.properties?.Titel?.title?.[0]?.plain_text || 
-                      page.properties?.Name?.title?.[0]?.plain_text || 
-                      "";
+        const title: string =
+          page.properties?.["Titel"]?.title?.[0]?.plain_text ||
+          page.properties?.["Name"]?.title?.[0]?.plain_text ||
+          "";
         existingPageTitles.set(title.toLowerCase(), page.id);
       }
     }
