@@ -267,12 +267,14 @@ function GraphView() {
               })}
               {graphNodes.map(({ note, x, y, degree: nodeDegree }) => {
                 const active = selected?.id === note.id;
+                const marked = markedIds.includes(note.id);
                 const color = KIND_COLORS[note.kind] ?? KIND_COLORS["note"];
                 const radius = 13 + Math.min(nodeDegree, 5) * 2;
                 return (
                   <g key={note.id} transform={`translate(${x} ${y})`} onClick={(event) => selectNode(event, note.id)} className="cursor-pointer">
                     {active && <circle r={radius + 8} fill={color} opacity="0.16" filter="url(#node-glow)" />}
-                    <circle r={radius} fill={color} fillOpacity={active ? 1 : 0.82} stroke="hsl(var(--background))" strokeWidth={active ? 4 : 2} />
+                    {marked && <circle r={radius + 6} fill="none" stroke="hsl(var(--primary))" strokeWidth={3} strokeDasharray="5 4" />}
+                    <circle r={radius} fill={color} fillOpacity={active || marked ? 1 : 0.82} stroke="hsl(var(--background))" strokeWidth={active ? 4 : 2} />
                     <text y={radius + 17} textAnchor="middle" className="fill-foreground text-[12px] font-semibold">{note.title.length > 22 ? `${note.title.slice(0, 21)}…` : note.title}</text>
                     {nodeDegree > 0 && <text y="4" textAnchor="middle" className="fill-background text-[10px] font-bold">{nodeDegree}</text>}
                   </g>
