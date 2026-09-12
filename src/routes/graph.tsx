@@ -224,7 +224,7 @@ function GraphView() {
               })}
               {graphNodes.map(({ note, x, y, degree: nodeDegree }) => {
                 const active = selected?.id === note.id;
-                const color = KIND_COLORS[note.kind] ?? KIND_COLORS.note;
+                const color = KIND_COLORS[note.kind] ?? KIND_COLORS["note"];
                 const radius = 13 + Math.min(nodeDegree, 5) * 2;
                 return (
                   <g key={note.id} transform={`translate(${x} ${y})`} onClick={(event) => selectNode(event, note.id)} className="cursor-pointer">
@@ -255,7 +255,7 @@ function GraphView() {
           <section className="card animate-fade-in">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className="flex items-center gap-2"><span className="size-2.5 rounded-full" style={{ background: KIND_COLORS[selected.kind] ?? KIND_COLORS.note }} /><p className="truncate font-display text-base font-semibold text-foreground">{selected.title}</p></div>
+                <div className="flex items-center gap-2"><span className="size-2.5 rounded-full" style={{ background: KIND_COLORS[selected.kind] ?? KIND_COLORS["note"] }} /><p className="truncate font-display text-base font-semibold text-foreground">{selected.title}</p></div>
                 <p className="mt-1 truncate text-xs text-muted-foreground">{KIND_LABELS[selected.kind] ?? "Notiz"} · {selected.path}</p>
               </div>
               <button type="button" onClick={() => navigate({ to: "/note/$id", params: { id: selected.id } })} className="btn-primary shrink-0 px-3 py-2 text-xs">Öffnen</button>
