@@ -407,7 +407,7 @@ export function useNotionSync() {
       if (direction === "pull" || direction === "both") {
         const result = await syncFromNotion(config.databaseId);
         setSyncStats((prev) => ({
-          ...prev,
+          toNotion: prev?.toNotion ?? 0,
           fromNotion: result.synced,
           errors: [...(prev?.errors || []), ...result.errors],
         }));
@@ -416,7 +416,7 @@ export function useNotionSync() {
       if (direction === "push" || direction === "both") {
         const result = await syncToNotion(config.databaseId);
         setSyncStats((prev) => ({
-          ...prev,
+          fromNotion: prev?.fromNotion ?? 0,
           toNotion: result.synced,
           errors: [...(prev?.errors || []), ...result.errors],
         }));
@@ -433,12 +433,11 @@ export function useNotionSync() {
 
   // Automatische Synchronisation
   useEffect(() => {
-    if (config.isEnabled && config.autoSync && config.apiKey && config.databaseId) {
-      const interval = setInterval(() => {
-        performSync("both");
-      }, 300000); // Alle 5 Minuten
-      return () => clearInterval(interval);
-    }
+    if (!(config.isEnabled && config.autoSync && config.apiKey && config.databaseId)) return undefined;
+    const interval = setInterval(() => {
+      void performSync("both");
+    }, 300000); // Alle 5 Minuten
+    return () => clearInterval(interval);
   }, [config, performSync]);
 
   return {
