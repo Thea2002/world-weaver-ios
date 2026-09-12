@@ -65,6 +65,8 @@ function GraphView() {
   const [query, setQuery] = useState("");
   const [zoom, setZoom] = useState(1);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [markedIds, setMarkedIds] = useState<string[]>([]);
+  const [multiMode, setMultiMode] = useState(false);
 
   const edges = useMemo<GraphEdge[]>(() => {
     const byTitle = new Map(notes.map((note) => [note.title.toLowerCase(), note.id]));
@@ -137,9 +139,15 @@ function GraphView() {
         .filter((note): note is Note => Boolean(note))
     : [];
 
+  const markedNotes = notes.filter((note) => markedIds.includes(note.id));
+
+  const toggleMark = (id: string) =>
+    setMarkedIds((prev) => (prev.includes(id) ? prev.filter((value) => value !== id) : [...prev, id]));
+
   const selectNode = (event: MouseEvent<SVGGElement>, id: string) => {
     event.stopPropagation();
     setSelectedId(id);
+    if (multiMode || event.shiftKey || event.metaKey || event.ctrlKey) toggleMark(id);
   };
 
   return (
@@ -153,6 +161,8 @@ function GraphView() {
             setQuery("");
             setZoom(1);
             setSelectedId(null);
+            setMarkedIds([]);
+            setMultiMode(false);
           }}
           className="btn-ghost px-3"
           aria-label="Graph zurücksetzen"
