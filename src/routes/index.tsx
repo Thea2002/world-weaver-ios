@@ -126,7 +126,7 @@ function Journal() {
                     <p className="mt-0.5 truncate text-xs text-muted-foreground">{n.path}</p>
                   </div>
                   <span className="chip">
-                    {KIND_ICON[n.kind] || KIND_ICON.note} {KIND_LABEL[n.kind] ?? n.kind}
+                    {KIND_ICON[n.kind] || KIND_ICON["note"]} {KIND_LABEL[n.kind] ?? n.kind}
                   </span>
                 </div>
                 <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">
@@ -148,7 +148,7 @@ function Journal() {
             <div key={kind}>
               <div className="flex items-center gap-2 mb-2">
                 <span style={{ color: KIND_COLOR[kind] || "#88c0d0" }}>
-                  {KIND_ICON[kind] || KIND_ICON.note}
+                  {KIND_ICON[kind] || KIND_ICON["note"]}
                 </span>
                 <h3 className="text-sm font-semibold text-foreground">
                   {KIND_LABEL[kind] || kind} ({kindNotes.length})

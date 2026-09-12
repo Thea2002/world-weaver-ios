@@ -16,12 +16,8 @@ import {
   REMOTE_PRESETS,
   type ThemeName,
 } from "@/lib/themes";
-import {
-  loadNotionConfig,
-  saveNotionConfig,
-  searchNotionDatabase,
-  useNotionRefreshCw,
-} from "@/lib/notion-client";
+import { loadNotionConfig, saveNotionConfig, searchNotionDatabase } from "@/lib/notion-client";
+import { useNotionSync } from "@/lib/notion-sync";
 import { RefreshCw, Database, Key, CheckCircle, XCircle, AlertCircle, Loader2 } from "lucide-react";
 
 

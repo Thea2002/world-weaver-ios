@@ -94,7 +94,7 @@ export async function searchNotionDatabase(query: string): Promise<NotionDatabas
   try {
     const response = await client.search({
       query: query,
-      filter: { value: "database", property: "object" },
+      filter: { value: "data_source", property: "object" },
     });
     
     const results = (response as unknown as NotionSearchResult).results;
@@ -117,9 +117,9 @@ export async function loadNotionDatabasePages(databaseId: string): Promise<Notio
   if (!client) return null;
 
   try {
-    const response = await client.databases.query({
-      database_id: databaseId,
-    });
+    const response = await (client as unknown as {
+      databases: { query: (args: { database_id: string }) => Promise<unknown> };
+    }).databases.query({ database_id: databaseId });
     
     const results = (response as unknown as { results: NotionPage[] }).results;
     return results.map((page) => ({
@@ -148,8 +148,8 @@ export async function createNotionPage(
     const response = await client.pages.create({
       parent: { type: "database_id", database_id: databaseId },
       properties,
-      children,
-    });
+      ...(children ? { children } : {}),
+    } as Parameters<typeof client.pages.create>[0]);
     return response.id;
   } catch (error) {
     console.error("Fehler beim Erstellen der Notion-Seite:", error);

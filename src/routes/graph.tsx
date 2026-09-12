@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState, type MouseEvent } from "react";
-import { CircleDot, Link2, Maximize2, Search, ZoomIn, ZoomOut } from "lucide-react";
+import { CheckCheck, CircleDot, Link2, Maximize2, Search, ZoomIn, ZoomOut } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { BatchExpandPanel } from "@/components/BatchExpandPanel";
 import { outgoingLinks, useVault, type Note } from "@/lib/vault";
 
 export const Route = createFileRoute("/graph")({
@@ -64,6 +65,8 @@ function GraphView() {
   const [query, setQuery] = useState("");
   const [zoom, setZoom] = useState(1);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [markedIds, setMarkedIds] = useState<string[]>([]);
+  const [multiMode, setMultiMode] = useState(false);
 
   const edges = useMemo<GraphEdge[]>(() => {
     const byTitle = new Map(notes.map((note) => [note.title.toLowerCase(), note.id]));
@@ -136,9 +139,15 @@ function GraphView() {
         .filter((note): note is Note => Boolean(note))
     : [];
 
+  const markedNotes = notes.filter((note) => markedIds.includes(note.id));
+
+  const toggleMark = (id: string) =>
+    setMarkedIds((prev) => (prev.includes(id) ? prev.filter((value) => value !== id) : [...prev, id]));
+
   const selectNode = (event: MouseEvent<SVGGElement>, id: string) => {
     event.stopPropagation();
     setSelectedId(id);
+    if (multiMode || event.shiftKey || event.metaKey || event.ctrlKey) toggleMark(id);
   };
 
   return (
@@ -152,6 +161,8 @@ function GraphView() {
             setQuery("");
             setZoom(1);
             setSelectedId(null);
+            setMarkedIds([]);
+            setMultiMode(false);
           }}
           className="btn-ghost px-3"
           aria-label="Graph zurücksetzen"
@@ -179,7 +190,39 @@ function GraphView() {
               aria-label="Notizen im Graph suchen"
             />
           </label>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setMultiMode((value) => !value)}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] ${
+                multiMode ? "border-primary bg-primary/15 text-primary" : "border-border bg-surface-2 text-muted-foreground"
+              }`}
+            >
+              <CheckCheck className="size-3" /> Mehrfachauswahl {multiMode ? "an" : "aus"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMarkedIds(graphNodes.map((node) => node.note.id))}
+              className="rounded-full border border-border bg-surface-2 px-2.5 py-1 text-[11px] text-muted-foreground"
+            >
+              Alle sichtbaren markieren
+            </button>
+            {markedIds.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setMarkedIds([])}
+                className="rounded-full border border-border bg-surface-2 px-2.5 py-1 text-[11px] text-muted-foreground"
+              >
+                Auswahl leeren ({markedIds.length})
+              </button>
+            )}
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Mehrfachauswahl an: Knoten antippen markiert sie. Am Desktop geht auch Shift- oder Cmd-Klick.
+          </p>
         </div>
+
+        {markedNotes.length > 0 && <BatchExpandPanel notes={markedNotes} onClear={() => setMarkedIds([])} />}
 
         <div className="relative overflow-hidden rounded-2xl border border-border bg-surface-2 shadow-inner">
           <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-between p-3">
@@ -224,12 +267,14 @@ function GraphView() {
               })}
               {graphNodes.map(({ note, x, y, degree: nodeDegree }) => {
                 const active = selected?.id === note.id;
-                const color = KIND_COLORS[note.kind] ?? KIND_COLORS.note;
+                const marked = markedIds.includes(note.id);
+                const color = KIND_COLORS[note.kind] ?? KIND_COLORS["note"];
                 const radius = 13 + Math.min(nodeDegree, 5) * 2;
                 return (
                   <g key={note.id} transform={`translate(${x} ${y})`} onClick={(event) => selectNode(event, note.id)} className="cursor-pointer">
                     {active && <circle r={radius + 8} fill={color} opacity="0.16" filter="url(#node-glow)" />}
-                    <circle r={radius} fill={color} fillOpacity={active ? 1 : 0.82} stroke="hsl(var(--background))" strokeWidth={active ? 4 : 2} />
+                    {marked && <circle r={radius + 6} fill="none" stroke="hsl(var(--primary))" strokeWidth={3} strokeDasharray="5 4" />}
+                    <circle r={radius} fill={color} fillOpacity={active || marked ? 1 : 0.82} stroke="hsl(var(--background))" strokeWidth={active ? 4 : 2} />
                     <text y={radius + 17} textAnchor="middle" className="fill-foreground text-[12px] font-semibold">{note.title.length > 22 ? `${note.title.slice(0, 21)}…` : note.title}</text>
                     {nodeDegree > 0 && <text y="4" textAnchor="middle" className="fill-background text-[10px] font-bold">{nodeDegree}</text>}
                   </g>
@@ -255,7 +300,7 @@ function GraphView() {
           <section className="card animate-fade-in">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className="flex items-center gap-2"><span className="size-2.5 rounded-full" style={{ background: KIND_COLORS[selected.kind] ?? KIND_COLORS.note }} /><p className="truncate font-display text-base font-semibold text-foreground">{selected.title}</p></div>
+                <div className="flex items-center gap-2"><span className="size-2.5 rounded-full" style={{ background: KIND_COLORS[selected.kind] ?? KIND_COLORS["note"] }} /><p className="truncate font-display text-base font-semibold text-foreground">{selected.title}</p></div>
                 <p className="mt-1 truncate text-xs text-muted-foreground">{KIND_LABELS[selected.kind] ?? "Notiz"} · {selected.path}</p>
               </div>
               <button type="button" onClick={() => navigate({ to: "/note/$id", params: { id: selected.id } })} className="btn-primary shrink-0 px-3 py-2 text-xs">Öffnen</button>
