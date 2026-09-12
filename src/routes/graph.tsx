@@ -190,7 +190,39 @@ function GraphView() {
               aria-label="Notizen im Graph suchen"
             />
           </label>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setMultiMode((value) => !value)}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] ${
+                multiMode ? "border-primary bg-primary/15 text-primary" : "border-border bg-surface-2 text-muted-foreground"
+              }`}
+            >
+              <CheckCheck className="size-3" /> Mehrfachauswahl {multiMode ? "an" : "aus"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMarkedIds(graphNodes.map((node) => node.note.id))}
+              className="rounded-full border border-border bg-surface-2 px-2.5 py-1 text-[11px] text-muted-foreground"
+            >
+              Alle sichtbaren markieren
+            </button>
+            {markedIds.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setMarkedIds([])}
+                className="rounded-full border border-border bg-surface-2 px-2.5 py-1 text-[11px] text-muted-foreground"
+              >
+                Auswahl leeren ({markedIds.length})
+              </button>
+            )}
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Mehrfachauswahl an: Knoten antippen markiert sie. Am Desktop geht auch Shift- oder Cmd-Klick.
+          </p>
         </div>
+
+        {markedNotes.length > 0 && <BatchExpandPanel notes={markedNotes} onClear={() => setMarkedIds([])} />}
 
         <div className="relative overflow-hidden rounded-2xl border border-border bg-surface-2 shadow-inner">
           <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-between p-3">
