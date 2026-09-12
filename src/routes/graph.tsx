@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState, type MouseEvent } from "react";
-import { CircleDot, Link2, Maximize2, Search, ZoomIn, ZoomOut } from "lucide-react";
+import { CheckCheck, CircleDot, Link2, Maximize2, Search, ZoomIn, ZoomOut } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { BatchExpandPanel } from "@/components/BatchExpandPanel";
 import { outgoingLinks, useVault, type Note } from "@/lib/vault";
 
 export const Route = createFileRoute("/graph")({
