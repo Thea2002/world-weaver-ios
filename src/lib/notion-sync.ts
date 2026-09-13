@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  createNotionClient,
   loadNotionConfig,
   saveNotionConfig,
   loadNotionDatabasePages,

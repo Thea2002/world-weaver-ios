@@ -107,7 +107,7 @@ export async function loadNotionDatabasePages(databaseId: string): Promise<Notio
 
     while (hasMore) {
       const body: Record<string, unknown> = { page_size: 100 };
-      if (startCursor) body.start_cursor = startCursor;
+      if (startCursor) body["start_cursor"] = startCursor;
 
       const response = await notionRequest(`/databases/${databaseId}/query`, "POST", body);
       if (!response) return null;
