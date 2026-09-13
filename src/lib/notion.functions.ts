@@ -25,7 +25,7 @@ export const notionProxy = createServerFn({ method: "POST" })
         "Notion-Version": "2022-06-28",
         "Content-Type": "application/json",
       },
-      body: data.method === "GET" ? undefined : JSON.stringify(data.body ?? {}),
+      body: data.method === "GET" ? null : JSON.stringify(data.body ?? {}),
     });
 
     const json = await res.json().catch(() => null);
