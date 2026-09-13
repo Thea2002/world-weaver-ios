@@ -1,4 +1,4 @@
-import { Client } from "@notionhq/client";
+import { notionProxy } from "./notion.functions";
 
 // Typen für Notion-Datenbanken
 interface NotionPage {
@@ -13,16 +13,6 @@ interface NotionDatabase {
   id: string;
   title: { type: "title"; title: { plain_text: string }[] }[];
   properties: Record<string, any>;
-}
-
-interface NotionSearchResult {
-  results: Array<{
-    object: "page" | "database";
-    id: string;
-    url: string;
-    title?: { type: "title"; title: { plain_text: string }[] }[];
-    properties?: Record<string, any>;
-  }>;
 }
 
 // Konfiguration für die Notion-Integration
@@ -45,64 +35,61 @@ export function saveNotionConfig(config: NotionConfig): void {
 
 /** Lädt die Notion-Konfiguration aus dem localStorage */
 export function loadNotionConfig(): NotionConfig {
+  const fallback: NotionConfig = {
+    apiKey: "",
+    databaseId: "",
+    isEnabled: false,
+    autoSync: false,
+    lastSyncTime: null,
+  };
   if (typeof localStorage === "undefined") {
-    return {
-      apiKey: "",
-      databaseId: "",
-      isEnabled: false,
-      autoSync: false,
-      lastSyncTime: null,
-    };
+    return fallback;
   }
   const raw = localStorage.getItem(CONFIG_KEY);
   if (!raw) {
-    return {
-      apiKey: "",
-      databaseId: "",
-      isEnabled: false,
-      autoSync: false,
-      lastSyncTime: null,
-    };
+    return fallback;
   }
   try {
     return JSON.parse(raw) as NotionConfig;
   } catch {
-    return {
-      apiKey: "",
-      databaseId: "",
-      isEnabled: false,
-      autoSync: false,
-      lastSyncTime: null,
-    };
+    return fallback;
   }
 }
 
-/** Erstellt einen Notion-Client mit dem gespeicherten API-Key */
-export function createNotionClient(): Client | null {
+/** Ruft die Notion-API über den Server-Proxy auf (Browser-Aufrufe scheitern an CORS) */
+async function notionRequest(
+  path: string,
+  method: "GET" | "POST" | "PATCH",
+  body?: unknown
+): Promise<any | null> {
   const config = loadNotionConfig();
   if (!config.apiKey || !config.isEnabled) {
     return null;
   }
-  return new Client({ auth: config.apiKey });
+  try {
+    return await notionProxy({ data: { apiKey: config.apiKey, path, method, body } });
+  } catch (error) {
+    console.error("Notion-Anfrage fehlgeschlagen:", error);
+    throw error;
+  }
 }
 
 /** Sucht nach einer Notion-Datenbank */
 export async function searchNotionDatabase(query: string): Promise<NotionDatabase[] | null> {
-  const client = createNotionClient();
-  if (!client) return null;
-
   try {
-    const response = await client.search({
-      query: query,
-      filter: { value: "data_source", property: "object" },
+    const response = await notionRequest("/search", "POST", {
+      query,
+      filter: { value: "database", property: "object" },
     });
-    
-    const results = (response as unknown as NotionSearchResult).results;
-    return results
+    if (!response) return null;
+
+    return (response.results as any[])
       .filter((r) => r.object === "database")
       .map((db) => ({
         id: db.id,
-        title: db.title || [{ type: "title", title: [{ plain_text: "Unnamed Database" }] }],
+        title: db.title?.length
+          ? [{ type: "title" as const, title: db.title }]
+          : [{ type: "title" as const, title: [{ plain_text: "Unnamed Database" }] }],
         properties: db.properties || {},
       }));
   } catch (error) {
@@ -111,24 +98,34 @@ export async function searchNotionDatabase(query: string): Promise<NotionDatabas
   }
 }
 
-/** Lädt alle Seiten aus einer Notion-Datenbank */
+/** Lädt alle Seiten aus einer Notion-Datenbank (mit Pagination) */
 export async function loadNotionDatabasePages(databaseId: string): Promise<NotionPage[] | null> {
-  const client = createNotionClient();
-  if (!client) return null;
-
   try {
-    const response = await (client as unknown as {
-      databases: { query: (args: { database_id: string }) => Promise<unknown> };
-    }).databases.query({ database_id: databaseId });
-    
-    const results = (response as unknown as { results: NotionPage[] }).results;
-    return results.map((page) => ({
-      id: page.id,
-      created_time: page.created_time,
-      last_edited_time: page.last_edited_time,
-      url: page.url,
-      properties: page.properties,
-    }));
+    const pages: NotionPage[] = [];
+    let startCursor: string | undefined;
+    let hasMore = true;
+
+    while (hasMore) {
+      const body: Record<string, unknown> = { page_size: 100 };
+      if (startCursor) body["start_cursor"] = startCursor;
+
+      const response = await notionRequest(`/databases/${databaseId}/query`, "POST", body);
+      if (!response) return null;
+
+      for (const page of response.results as any[]) {
+        pages.push({
+          id: page.id,
+          created_time: page.created_time,
+          last_edited_time: page.last_edited_time,
+          url: page.url,
+          properties: page.properties,
+        });
+      }
+      hasMore = Boolean(response.has_more);
+      startCursor = response.next_cursor ?? undefined;
+    }
+
+    return pages;
   } catch (error) {
     console.error("Fehler beim Laden der Notion-Seiten:", error);
     return null;
@@ -141,16 +138,13 @@ export async function createNotionPage(
   properties: Record<string, any>,
   children?: any[]
 ): Promise<string | null> {
-  const client = createNotionClient();
-  if (!client) return null;
-
   try {
-    const response = await client.pages.create({
-      parent: { type: "database_id", database_id: databaseId },
+    const response = await notionRequest("/pages", "POST", {
+      parent: { database_id: databaseId },
       properties,
       ...(children ? { children } : {}),
-    } as Parameters<typeof client.pages.create>[0]);
-    return response.id;
+    });
+    return response?.id ?? null;
   } catch (error) {
     console.error("Fehler beim Erstellen der Notion-Seite:", error);
     return null;
@@ -163,20 +157,11 @@ export async function updateNotionPage(
   properties: Record<string, any>,
   children?: any[]
 ): Promise<boolean> {
-  const client = createNotionClient();
-  if (!client) return false;
-
   try {
-    await client.pages.update({
-      page_id: pageId,
-      properties,
-    });
-    
-    if (children) {
-      await client.blocks.children.append({
-        block_id: pageId,
-        children,
-      });
+    await notionRequest(`/pages/${pageId}`, "PATCH", { properties });
+
+    if (children && children.length > 0) {
+      await notionRequest(`/blocks/${pageId}/children`, "PATCH", { children });
     }
     return true;
   } catch (error) {
@@ -187,14 +172,8 @@ export async function updateNotionPage(
 
 /** Löscht eine Notion-Seite */
 export async function deleteNotionPage(pageId: string): Promise<boolean> {
-  const client = createNotionClient();
-  if (!client) return false;
-
   try {
-    await client.pages.update({
-      page_id: pageId,
-      archived: true,
-    });
+    await notionRequest(`/pages/${pageId}`, "PATCH", { archived: true });
     return true;
   } catch (error) {
     console.error("Fehler beim Löschen der Notion-Seite:", error);
@@ -210,7 +189,7 @@ export function extractTextFromRichText(richText: any[]): string {
       if (item.type === "text" && item.text?.content) {
         return item.text.content;
       }
-      return "";
+      return item.plain_text ?? "";
     })
     .join("");
 }
@@ -218,7 +197,7 @@ export function extractTextFromRichText(richText: any[]): string {
 /** Extrahiert Markdown aus Notion-Blöcken */
 export function notionBlocksToMarkdown(blocks: any[]): string {
   if (!blocks || !Array.isArray(blocks)) return "";
-  
+
   return blocks
     .map((block) => {
       switch (block.type) {
@@ -234,10 +213,11 @@ export function notionBlocksToMarkdown(blocks: any[]): string {
           return `- ${extractTextFromRichText(block.bulleted_list_item?.rich_text)}`;
         case "numbered_list_item":
           return `1. ${extractTextFromRichText(block.numbered_list_item?.rich_text)}`;
-        case "code":
+        case "code": {
           const language = block.code?.language || "";
           const content = block.code?.rich_text ? extractTextFromRichText(block.code.rich_text) : "";
           return "```" + language + "\n" + content + "\n```";
+        }
         case "quote":
           return `> ${extractTextFromRichText(block.quote?.rich_text)}`;
         case "divider":
@@ -250,18 +230,23 @@ export function notionBlocksToMarkdown(blocks: any[]): string {
     .join("\n\n");
 }
 
-/** Lädt den Inhalt einer Notion-Seite als Markdown */
+/** Lädt den Inhalt einer Notion-Seite als Markdown (mit Pagination) */
 export async function loadNotionPageContent(pageId: string): Promise<string | null> {
-  const client = createNotionClient();
-  if (!client) return null;
-
   try {
-    const response = await client.blocks.children.list({
-      block_id: pageId,
-      page_size: 100,
-    });
-    
-    const blocks = (response as unknown as { results: any[] }).results;
+    const blocks: any[] = [];
+    let startCursor: string | undefined;
+    let hasMore = true;
+
+    while (hasMore) {
+      const query = startCursor ? `?start_cursor=${encodeURIComponent(startCursor)}` : "";
+      const response = await notionRequest(`/blocks/${pageId}/children${query}`, "GET");
+      if (!response) return null;
+
+      blocks.push(...(response.results as any[]));
+      hasMore = Boolean(response.has_more);
+      startCursor = response.next_cursor ?? undefined;
+    }
+
     return notionBlocksToMarkdown(blocks);
   } catch (error) {
     console.error("Fehler beim Laden des Notion-Seiteninhalts:", error);
