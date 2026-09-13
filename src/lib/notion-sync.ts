@@ -129,8 +129,8 @@ export function noteToNotionProperties(note: Note): Record<string, any> {
 
 /** Synchronisiert Notizen von Notion zum lokalen Vault */
 export async function syncFromNotion(databaseId: string): Promise<{ synced: number; errors: string[] }> {
-  const client = createNotionClient();
-  if (!client) {
+  const config = loadNotionConfig();
+  if (!config.apiKey || !config.isEnabled) {
     return { synced: 0, errors: ["Notion-Client nicht verfügbar"] };
   }
   
@@ -190,8 +190,8 @@ export async function syncFromNotion(databaseId: string): Promise<{ synced: numb
 
 /** Synchronisiert lokale Notizen zu Notion */
 export async function syncToNotion(databaseId: string): Promise<{ synced: number; errors: string[] }> {
-  const client = createNotionClient();
-  if (!client) {
+  const config = loadNotionConfig();
+  if (!config.apiKey || !config.isEnabled) {
     return { synced: 0, errors: ["Notion-Client nicht verfügbar"] };
   }
   
