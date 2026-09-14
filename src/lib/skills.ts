@@ -497,6 +497,34 @@ Würfel;Begegnung;Notiz
 `,
   },
   {
+    id: "one-shot",
+    name: "One-Shot Generator",
+    description: "Erstellt vollständige Abenteuer für einen Abend",
+    emoji: "🎲",
+    folder: "Journal/One-Shots",
+    kind: "session",
+    tag: "one-shot",
+    prompt: "Du bist der One-Shot Generator. Erstelle ein vollständiges, sofort spielbares Abenteuer auf Deutsch mit Zeitplan, Szenen, Hinweisen, Gegnern, Wendung und Abschluss.",
+    template: (i) => `${fm("one-shot", i, "adventure, one-shot")}# 🎲 ${i}
+
+## 🎬 Aufhänger & starker Einstieg
+
+## ⏱️ Ablauf in Szenen
+
+## 👥 Wichtige NSCs
+
+## 🔎 Hinweise & Entdeckungen
+
+## ⚔️ Begegnungen
+
+## 🌀 Wendung
+
+## 🏁 Finale & mögliche Ausgänge
+
+## 💎 Belohnungen
+`,
+  },
+  {
     id: "hazard",
     name: "Hazard Generator",
     description: "Erstellt Umweltgefahren und Fallen",

@@ -190,6 +190,7 @@ export const SKILL_OPTIONS: Record<string, SkillOption[]> = {
     GENRE,
   ],
   "session-prep": [LEVEL, MOOD, LENGTH],
+  "one-shot": [LEVEL, { id: "duration", label: "Spielzeit", choices: ["2–3 Stunden", "4–5 Stunden", "6–8 Stunden"] }, TONE, MOOD, LENGTH],
   quest_default: [],
   dashboard: [LENGTH],
   discord: [{ id: "style", label: "Stil", choices: ["Ankündigung", "Statblock", "Recap", "Lore-Drop"] }],
@@ -226,7 +227,7 @@ function offerTableRule(skill: Skill) {
 }
 
 /** Builds the user message: free input + all chosen options (multi-select aware). */
-export function buildUserMessage(skill: Skill, input: string, selected: Choices, settings: string[] = []) {
+export function buildUserMessage(skill: Skill, input: string, selected: Choices, settings: string[] = [], quantity = 1) {
   const opts = optionsFor(skill)
     .map((o) => {
       const v = (selected[o.id] ?? []).filter((x) => x && x !== ANY);
@@ -238,6 +239,7 @@ export function buildUserMessage(skill: Skill, input: string, selected: Choices,
   const lines = [
     input.trim() ? `Idee / Titel: ${input.trim()}` : "Idee / Titel: Überrasche mich (frei erfinden).",
     settings.length ? `Gewähltes Setting: ${settings.join(", ")}` : null,
+    `Gewünschte Anzahl: ${quantity}. Erzeuge exakt ${quantity} eigenständige ${quantity === 1 ? "Ausgabe" : "Ausgaben"} innerhalb dieses Dokuments und nummeriere sie bei mehreren klar.`,
     opts.length
       ? `Vorgaben (müssen exakt eingehalten werden):\n${opts.join("\n")}`
       : "Keine weiteren Vorgaben — wähle passende Werte selbst.",
