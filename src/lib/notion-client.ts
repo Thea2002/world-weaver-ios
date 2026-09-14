@@ -17,7 +17,6 @@ interface NotionDatabase {
 
 // Konfiguration für die Notion-Integration
 export interface NotionConfig {
-  apiKey: string;
   databaseId: string;
   isEnabled: boolean;
   autoSync: boolean;
@@ -25,6 +24,7 @@ export interface NotionConfig {
 }
 
 const CONFIG_KEY = "mythic:notion:config";
+export const DEFAULT_NOTION_DATA_SOURCE_ID = "3da25bbf-71c0-80b4-bb66-000bbeb14aa3";
 
 /** Speichert die Notion-Konfiguration im localStorage */
 export function saveNotionConfig(config: NotionConfig): void {
@@ -36,9 +36,8 @@ export function saveNotionConfig(config: NotionConfig): void {
 /** Lädt die Notion-Konfiguration aus dem localStorage */
 export function loadNotionConfig(): NotionConfig {
   const fallback: NotionConfig = {
-    apiKey: "",
-    databaseId: "",
-    isEnabled: false,
+    databaseId: DEFAULT_NOTION_DATA_SOURCE_ID,
+    isEnabled: true,
     autoSync: false,
     lastSyncTime: null,
   };
@@ -50,7 +49,13 @@ export function loadNotionConfig(): NotionConfig {
     return fallback;
   }
   try {
-    return JSON.parse(raw) as NotionConfig;
+    const saved = JSON.parse(raw) as Partial<NotionConfig>;
+    return {
+      ...fallback,
+      ...saved,
+      databaseId: saved.databaseId || DEFAULT_NOTION_DATA_SOURCE_ID,
+      isEnabled: saved.isEnabled ?? true,
+    };
   } catch {
     return fallback;
   }
@@ -63,11 +68,11 @@ async function notionRequest(
   body?: unknown
 ): Promise<any | null> {
   const config = loadNotionConfig();
-  if (!config.apiKey || !config.isEnabled) {
+  if (!config.isEnabled) {
     return null;
   }
   try {
-    return await notionProxy({ data: { apiKey: config.apiKey, path, method, body } });
+    return await notionProxy({ data: { path, method, body } });
   } catch (error) {
     console.error("Notion-Anfrage fehlgeschlagen:", error);
     throw error;
@@ -79,12 +84,12 @@ export async function searchNotionDatabase(query: string): Promise<NotionDatabas
   try {
     const response = await notionRequest("/search", "POST", {
       query,
-      filter: { value: "database", property: "object" },
+      filter: { value: "data_source", property: "object" },
     });
     if (!response) return null;
 
     return (response.results as any[])
-      .filter((r) => r.object === "database")
+      .filter((r) => r.object === "data_source")
       .map((db) => ({
         id: db.id,
         title: db.title?.length
@@ -109,7 +114,7 @@ export async function loadNotionDatabasePages(databaseId: string): Promise<Notio
       const body: Record<string, unknown> = { page_size: 100 };
       if (startCursor) body["start_cursor"] = startCursor;
 
-      const response = await notionRequest(`/databases/${databaseId}/query`, "POST", body);
+      const response = await notionRequest(`/data_sources/${databaseId}/query`, "POST", body);
       if (!response) return null;
 
       for (const page of response.results as any[]) {
@@ -140,14 +145,14 @@ export async function createNotionPage(
 ): Promise<string | null> {
   try {
     const response = await notionRequest("/pages", "POST", {
-      parent: { database_id: databaseId },
+      parent: { type: "data_source_id", data_source_id: databaseId },
       properties,
       ...(children ? { children } : {}),
     });
     return response?.id ?? null;
   } catch (error) {
     console.error("Fehler beim Erstellen der Notion-Seite:", error);
-    return null;
+    throw error;
   }
 }
 
@@ -166,7 +171,7 @@ export async function updateNotionPage(
     return true;
   } catch (error) {
     console.error("Fehler beim Aktualisieren der Notion-Seite:", error);
-    return false;
+    throw error;
   }
 }
 

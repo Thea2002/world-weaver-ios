@@ -47,6 +47,7 @@ function Skills() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [copied, setCopied] = useState(false);
   const [draft, setDraft] = useState<{ prompt: string; template: string } | null>(null);
+  const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     const raw = localStorage.getItem(SETTING_KEY);
@@ -91,6 +92,7 @@ function Skills() {
       const v = (choices[o.id] ?? []).filter((x) => x !== ANY);
       if (v.length) props[o.label] = v.join(", ");
     }
+    props["Anzahl"] = String(quantity);
     props["Erstellt"] = new Date().toLocaleString("de-DE");
     return props;
   };
@@ -105,7 +107,7 @@ function Skills() {
       const res = await generateContent({
         data: {
           system: buildSystemPrompt(skill, settingGuides(settings)),
-          user: buildUserMessage(skill, input, choices, settingLabels),
+          user: buildUserMessage(skill, input, choices, settingLabels, quantity),
         },
       });
       const body = res.text.replace(/^```(?:markdown|md)?\n([\s\S]*)\n```$/m, "$1").trim();
@@ -127,6 +129,19 @@ function Skills() {
         className="mb-4 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground"
         aria-label="Generator-Input"
       />
+
+      <label className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-border bg-surface px-3 py-2">
+        <span className="text-xs font-medium text-muted-foreground">Gewünschte Anzahl</span>
+        <input
+          type="number"
+          min={1}
+          max={20}
+          value={quantity}
+          onChange={(event) => setQuantity(Math.min(20, Math.max(1, Number(event.target.value) || 1)))}
+          className="w-16 rounded-lg border border-border bg-surface-2 px-2 py-1 text-center text-sm text-foreground outline-none"
+          aria-label="Anzahl der Ausgaben"
+        />
+      </label>
 
       <section className="card mb-4">
         <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">

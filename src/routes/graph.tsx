@@ -77,7 +77,7 @@ function GraphView() {
       for (const link of outgoingLinks(note.body)) {
         const target = byTitle.get(link.toLowerCase());
         if (!target || target === note.id) continue;
-        const key = [note.id, target].sort().join(":");
+        const key = `${note.id}:${target}`;
         if (seen.has(key)) continue;
         seen.add(key);
         result.push({ source: note.id, target });
@@ -248,6 +248,12 @@ function GraphView() {
             onClick={() => setSelectedId(null)}
           >
             <defs>
+              <marker id="graph-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" className="fill-border" />
+              </marker>
+              <marker id="graph-arrow-active" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" className="fill-primary" />
+              </marker>
               <pattern id="graph-grid" width="32" height="32" patternUnits="userSpaceOnUse">
                 <path d="M 32 0 L 0 0 0 32" fill="none" stroke="currentColor" strokeOpacity="0.06" strokeWidth="1" />
               </pattern>
@@ -263,7 +269,25 @@ function GraphView() {
                 const target = nodeById.get(edge.target);
                 if (!source || !target) return null;
                 const active = selected?.id === edge.source || selected?.id === edge.target;
-                return <line key={`${edge.source}-${edge.target}`} x1={source.x} y1={source.y} x2={target.x} y2={target.y} className={active ? "stroke-primary" : "stroke-border"} strokeWidth={active ? 2.5 : 1.2} strokeOpacity={active ? 0.9 : 0.65} />;
+                return (
+                  <line
+                    key={`${edge.source}-${edge.target}`}
+                    x1={source.x}
+                    y1={source.y}
+                    x2={target.x}
+                    y2={target.y}
+                    className={`cursor-pointer ${active ? "stroke-primary" : "stroke-border"}`}
+                    strokeWidth={active ? 8 : 6}
+                    strokeOpacity={active ? 0.9 : 0.35}
+                    markerEnd={active ? "url(#graph-arrow-active)" : "url(#graph-arrow)"}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      navigate({ to: "/note/$id", params: { id: edge.source } });
+                    }}
+                  >
+                    <title>{`Zur Ursprungsnotiz: ${source.note.title}`}</title>
+                  </line>
+                );
               })}
               {graphNodes.map(({ note, x, y, degree: nodeDegree }) => {
                 const active = selected?.id === note.id;
